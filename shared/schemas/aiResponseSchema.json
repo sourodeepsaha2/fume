@@ -1,0 +1,75 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AIResponseSchema",
+  "description": "Schema for validating AI health coaching intelligence response payloads.",
+  "type": "object",
+  "properties": {
+    "weekly_summary": { "$ref": "#/definitions/AISection" },
+    "nutrition": { "$ref": "#/definitions/AISection" },
+    "exercise": { "$ref": "#/definitions/AISection" },
+    "steps": { "$ref": "#/definitions/AISection" },
+    "sleep": { "$ref": "#/definitions/AISection" },
+    "water": { "$ref": "#/definitions/AISection" },
+    "symptoms": { "$ref": "#/definitions/AISection" },
+    "stress": { "$ref": "#/definitions/AISection" },
+    "engagement_level": { "$ref": "#/definitions/AISection" },
+    "key_barriers": { "$ref": "#/definitions/AISection" },
+    "pending_actions": { "$ref": "#/definitions/AISection" },
+    "risk_flags": { "$ref": "#/definitions/AISection" },
+    "coach_recommendation": { "$ref": "#/definitions/AISection" },
+    "supporting_evidence": { "$ref": "#/definitions/AISection" },
+    "human_review": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["Pending", "Approved", "Rejected"],
+          "default": "Pending"
+        }
+      },
+      "required": ["status"],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "weekly_summary",
+    "nutrition",
+    "exercise",
+    "steps",
+    "sleep",
+    "water",
+    "symptoms",
+    "stress",
+    "engagement_level",
+    "key_barriers",
+    "pending_actions",
+    "risk_flags",
+    "coach_recommendation",
+    "supporting_evidence",
+    "human_review"
+  ],
+  "additionalProperties": false,
+  "definitions": {
+    "AISection": {
+      "type": "object",
+      "properties": {
+        "summary": {
+          "type": ["string", "null"]
+        },
+        "classification": {
+          "type": "string",
+          "enum": ["Confirmed Fact", "Client Reported", "AI Inference", "Missing Information"]
+        },
+        "confidence": {
+          "type": ["string", "null"],
+          "enum": ["Low", "Medium", "High", null]
+        },
+        "evidence": {
+          "type": ["string", "null"]
+        }
+      },
+      "required": ["summary", "classification", "confidence", "evidence"],
+      "additionalProperties": false
+    }
+  }
+}
