@@ -297,7 +297,8 @@ function App() {
       console.error(err);
       let errMsg = 'An unexpected error occurred.';
       if (err.message && err.message.includes('Failed to fetch')) {
-        errMsg = 'Failed to connect to the server. Make sure the backend server is running on port 5001.';
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+        errMsg = `Failed to connect to the API server at ${apiUrl}. Please check your connection or make sure the backend is active.`;
       } else if (err.message) {
         errMsg = err.message;
       }
