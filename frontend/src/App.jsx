@@ -628,10 +628,8 @@ function App() {
                 </Typography>
               </Box>
 
-              <Box display="flex" alignItems="center" gap={2}>
-                <Box display={{ xs: 'none', sm: 'flex' }} alignItems="center" gap={1.5}>
-                  <Chip icon={<AuditIcon fontSize="small" />} label={`Audit Queue: ${auditHistory.length} Reviewed`} variant="outlined" size="small" />
-                </Box>
+              <Box display="flex" alignItems="center" gap={2} sx={{ rowGap: 1.5, columnGap: 2.5, flexWrap: 'wrap' }}>
+                <Chip icon={<AuditIcon fontSize="small" />} label={`Audit Queue: ${auditHistory.length} Reviewed`} variant="outlined" size="small" sx={{ display: { xs: 'none', sm: 'inline-flex' } }} />
                 <Button variant="outlined" size="small" onClick={handleClear} startIcon={<ResetIcon fontSize="small" />}>
                   Reset Session
                 </Button>
@@ -722,8 +720,8 @@ function App() {
                 />
 
                 {/* Toolbar Controls */}
-                <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'center' }} gap={2.5} sx={{ pt: 0.5 }}>
-                  <Box display="flex" gap={2} alignItems="center" flexWrap="wrap">
+                <Box display="flex" flexDirection="row" flexWrap="wrap" justifyContent="space-between" alignItems="center" sx={{ gap: 2.5, rowGap: 2.5, columnGap: 3, pt: 1 }}>
+                  <Box display="flex" alignItems="center" flexWrap="wrap" sx={{ gap: 2, rowGap: 1.5, columnGap: 2.5 }}>
                     <input
                       type="file"
                       accept=".txt"
@@ -733,12 +731,12 @@ function App() {
                       onChange={handleFileUpload}
                     />
                     <label htmlFor="contained-button-file">
-                      <Button variant="outlined" component="span" startIcon={<CloudUploadIcon />} size="medium" sx={{ px: 2, py: 0.75 }}>
+                      <Button variant="outlined" component="span" startIcon={<CloudUploadIcon />} size="medium" sx={{ px: 2.5, py: 0.85 }}>
                         Upload .txt
                       </Button>
                     </label>
                     {fileName && <Chip icon={<FileIcon fontSize="small" />} label={fileName} onDelete={handleClear} size="small" variant="outlined" />}
-                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500, fontSize: '0.8rem' }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500, fontSize: '0.825rem', whiteSpace: 'nowrap' }}>
                       {conversationText ? `${conversationText.length} characters | ${conversationText.split(/\s+/).filter(Boolean).length} words` : 'Empty transcript'}
                     </Typography>
                   </Box>
@@ -748,7 +746,7 @@ function App() {
                     onClick={handleAnalyze}
                     disabled={loading}
                     startIcon={loading ? <CircularProgress size={16} color="inherit" /> : <AutoAwesomeIcon fontSize="small" />}
-                    sx={{ px: 3.5, py: 1.1, fontSize: '0.9rem', fontWeight: 700 }}
+                    sx={{ px: 3.5, py: 1.1, fontSize: '0.9rem', fontWeight: 700, whiteSpace: 'nowrap' }}
                   >
                     {loading ? 'Analyzing...' : 'Generate AI Intelligence'}
                   </Button>
