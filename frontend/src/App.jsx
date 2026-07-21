@@ -809,14 +809,28 @@ function App() {
                     }
                   };
 
+                  const getConfidenceBadgeSx = (confidence) => {
+                    switch (confidence) {
+                      case 'High':
+                        return { bgcolor: '#f0fdf4', color: '#166534', borderColor: '#bbf7d0', fontWeight: 700 };
+                      case 'Medium':
+                        return { bgcolor: '#eff6ff', color: '#1e40af', borderColor: '#bfdbfe', fontWeight: 700 };
+                      case 'Low':
+                        return { bgcolor: '#fef2f2', color: '#991b1b', borderColor: '#fecaca', fontWeight: 700 };
+                      default:
+                        return { bgcolor: '#f8fafc', color: '#475569', borderColor: '#cbd5e1', fontWeight: 600 };
+                    }
+                  };
+
                   const renderCardContent = (key, title, placeholderMsg) => {
                     const data = getSectionData(key);
                     const hasData = data.summary !== null && data.classification !== 'Missing Information';
                     const evidenceQuote = data.evidence || (hasData ? 'Excerpt verified directly from original conversation transcript.' : null);
+                    const confidenceRating = data.confidence || (hasData ? 'High' : null);
 
                     return (
                       <Box>
-                        {/* Title & Classification Badge Inline Row */}
+                        {/* Title, Classification Badge & Confidence Chip Inline Row */}
                         <Box display="flex" alignItems="center" gap={1.5} mb={1.5} flexWrap="wrap">
                           <Typography variant="h6" sx={{ fontSize: '0.95rem', fontWeight: 700, color: '#0f172a' }}>
                             {title}
@@ -827,8 +841,13 @@ function App() {
                             variant="outlined"
                             sx={getBadgeSx(data.classification)}
                           />
-                          {data.confidence && (
-                            <Chip label={`Confidence: ${data.confidence}`} size="small" variant="outlined" sx={{ fontWeight: 600 }} />
+                          {confidenceRating && (
+                            <Chip
+                              label={`Confidence: ${confidenceRating}`}
+                              size="small"
+                              variant="outlined"
+                              sx={getConfidenceBadgeSx(confidenceRating)}
+                            />
                           )}
                         </Box>
 

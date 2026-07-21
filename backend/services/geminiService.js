@@ -45,7 +45,7 @@ For every section, include:
 - evidence
 
 CRITICAL: For every finding that has a non-null summary, you MUST provide exact supporting evidence quotes directly from the transcript text. Never output a finding without supporting quote evidence.
-Confidence should be "High", "Medium", or "Low" (or null if the section has Missing Information).
+CRITICAL CONFIDENCE RULE: Evaluate how strongly the conversation transcript supports each finding and assign a confidence rating of exactly "High", "Medium", or "Low" (or null ONLY if classification is "Missing Information").
 
 Your JSON output must follow this exact structure (do not add or change top-level keys):
 {
