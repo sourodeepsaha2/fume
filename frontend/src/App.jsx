@@ -791,53 +791,57 @@ function App() {
                 )}
 
                 {result ? (() => {
-                  const cardConfigs = [
-                    { key: 'nutrition', title: 'Nutrition & Diet', category: 'vitals' },
-                    { key: 'exercise', title: 'Exercise & Workouts', category: 'vitals' },
-                    { key: 'steps', title: 'Steps Activity', category: 'vitals' },
-                    { key: 'sleep', title: 'Sleep Analysis', category: 'vitals' },
-                    { key: 'water', title: 'Hydration & Water', category: 'vitals' },
-                    { key: 'symptoms', title: 'Symptoms & Concerns', category: 'vitals' },
-                    { key: 'stress', title: 'Stress & Well-being', category: 'vitals' },
-                    { key: 'engagement_level', title: 'Engagement Level', category: 'overview' },
-                    { key: 'key_barriers', title: 'Key Barriers', category: 'overview' },
-                    { key: 'pending_actions', title: 'Pending Actions', category: 'action' },
-                    { key: 'risk_flags', title: 'Risk Flags & Warnings', category: 'overview' },
-                    { key: 'coach_recommendation', title: 'Coach Recommendations', category: 'action' }
-                  ];
-
-                  const summaryData = result.weekly_summary || { summary: null, classification: 'Missing Information', confidence: null, evidence: null };
-                  const evidenceData = result.supporting_evidence || { summary: null, classification: 'Missing Information', confidence: null, evidence: null };
-
-                  const getOverallHealthStatus = () => {
-                    const hasRisk = result.risk_flags && result.risk_flags.summary && result.risk_flags.classification !== 'Missing Information';
-                    const hasSymptoms = result.symptoms && result.symptoms.summary && result.symptoms.classification !== 'Missing Information';
-                    if (hasRisk) return { label: 'Needs Attention', color: 'error' };
-                    if (hasSymptoms) return { label: 'Monitoring', color: 'warning' };
-                    return { label: 'Stable / Good', color: 'success' };
+                  const getSectionData = (key) => {
+                    return result[key] || { summary: null, classification: 'Missing Information', confidence: null, evidence: null };
                   };
 
-                  const getOverallEngagementStatus = () => {
-                    const eng = result.engagement_level;
-                    if (!eng || !eng.summary || eng.classification === 'Missing Information') return { label: 'Not Measured', color: 'default' };
-                    const sum = eng.summary.toLowerCase();
-                    if (sum.includes('high') || sum.includes('excellent') || sum.includes('good') || sum.includes('active') || sum.includes('enthusiastic')) {
-                      return { label: 'High Adherence', color: 'success' };
-                    }
-                    if (sum.includes('low') || sum.includes('struggle') || sum.includes('poor')) return { label: 'Low Adherence', color: 'error' };
-                    return { label: 'Moderate', color: 'info' };
-                  };
+                  const renderCardContent = (key, title, placeholderMsg) => {
+                    const data = getSectionData(key);
+                    const hasData = data.summary !== null && data.classification !== 'Missing Information';
 
-                  const getOverallRiskStatus = () => {
-                    const risk = result.risk_flags;
-                    const symptoms = result.symptoms;
-                    const barriers = result.key_barriers;
-                    const hasRisk = risk && risk.summary && risk.classification !== 'Missing Information';
-                    const hasBarriersOrSymptoms = (symptoms && symptoms.summary && symptoms.classification !== 'Missing Information') ||
-                                                 (barriers && barriers.summary && barriers.classification !== 'Missing Information');
-                    if (hasRisk) return { label: 'High Risk', color: 'error' };
-                    if (hasBarriersOrSymptoms) return { label: 'Medium Risk', color: 'warning' };
-                    return { label: 'Low Risk', color: 'success' };
+                    return (
+                      <Box>
+                        <Box display="flex" justifyContent="space-between" alignItems="center" gap={1.5} mb={1.5}>
+                          <Typography variant="h6" sx={{ fontSize: '0.95rem', fontWeight: 700 }}>
+                            {title}
+                          </Typography>
+                          <Chip label={data.classification || 'Missing Information'} size="small" color={getBadgeColor(data.classification)} />
+                        </Box>
+
+                        {isEditing ? (
+                          <TextField
+                            fullWidth
+                            multiline
+                            rows={3}
+                            value={editedSummaries[key] || ''}
+                            onChange={(e) => handleSummaryChange(key, e.target.value)}
+                            size="small"
+                            sx={{ mb: 2 }}
+                          />
+                        ) : (
+                          <Typography variant="body1" sx={{ mb: 1.5, color: hasData ? 'text.primary' : 'text.secondary', fontStyle: hasData ? 'normal' : 'italic' }}>
+                            {data.summary || placeholderMsg || 'No details recorded in session.'}
+                          </Typography>
+                        )}
+
+                        {hasData && (
+                          <Box sx={{ mt: 1 }}>
+                            {data.confidence && (
+                              <Box mb={1}>
+                                <Chip label={`Confidence: ${data.confidence}`} size="small" variant="outlined" />
+                              </Box>
+                            )}
+                            {data.evidence && (
+                              <Box sx={{ p: 1.5, bgcolor: '#f8fafc', borderLeft: '3px solid #0f172a', borderRadius: '0 4px 4px 0', mt: 1 }}>
+                                <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic', display: 'block', lineHeight: 1.4 }}>
+                                  "{data.evidence}"
+                                </Typography>
+                              </Box>
+                            )}
+                          </Box>
+                        )}
+                      </Box>
+                    );
                   };
 
                   return (
@@ -849,7 +853,7 @@ function App() {
                           <Box>
                             <Box display="flex" alignItems="center" gap={1.5} flexWrap="wrap">
                               <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1.15rem' }}>
-                                Clinical Intelligence Report
+                                Client Intelligence Report
                               </Typography>
                               <Chip label={clientMetadata.clientName} color="primary" size="small" />
                               <Chip label={clientMetadata.clientId} variant="outlined" size="small" />
@@ -871,40 +875,6 @@ function App() {
                           </Box>
                         </Box>
                       </Paper>
-
-                      {/* Summary Triage Row */}
-                      <Grid container spacing={2} sx={{ mb: 3 }}>
-                        <Grid item xs={12} sm={4}>
-                          <Card sx={{ textAlign: 'center', p: 2 }}>
-                            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: 'uppercase' }}>
-                              Overall Health Status
-                            </Typography>
-                            <Box mt={1}>
-                              <Chip label={getOverallHealthStatus().label} color={getOverallHealthStatus().color} sx={{ fontWeight: 700, px: 1 }} />
-                            </Box>
-                          </Card>
-                        </Grid>
-                        <Grid item xs={12} sm={4}>
-                          <Card sx={{ textAlign: 'center', p: 2 }}>
-                            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: 'uppercase' }}>
-                              Client Engagement Level
-                            </Typography>
-                            <Box mt={1}>
-                              <Chip label={getOverallEngagementStatus().label} color={getOverallEngagementStatus().color} sx={{ fontWeight: 700, px: 1 }} />
-                            </Box>
-                          </Card>
-                        </Grid>
-                        <Grid item xs={12} sm={4}>
-                          <Card sx={{ textAlign: 'center', p: 2 }}>
-                            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: 'uppercase' }}>
-                              Risk Rating
-                            </Typography>
-                            <Box mt={1}>
-                              <Chip label={getOverallRiskStatus().label} color={getOverallRiskStatus().color} sx={{ fontWeight: 700, px: 1 }} />
-                            </Box>
-                          </Card>
-                        </Grid>
-                      </Grid>
 
                       {/* Human Review Audit Panel */}
                       <Paper sx={{ p: 2.5, mb: 3, border: '1px solid #0f172a', bgcolor: '#f8fafc' }}>
@@ -970,164 +940,139 @@ function App() {
                         )}
                       </Paper>
 
-                      {/* Workspace Navigation Tabs */}
-                      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-                        <Tabs value={activeTab} onChange={(e, val) => setActiveTab(val)} indicatorColor="primary" textColor="primary">
-                          <Tab label="Executive & Risk" />
-                          <Tab label="Vitals & Lifestyle" />
-                          <Tab label="Action Plan & Evidence" />
-                          <Tab label="All 14 Metrics" />
-                        </Tabs>
-                      </Box>
+                      {/* 9 STRUCTURED CLIENT INTELLIGENCE REPORT CARDS */}
+                      
+                      {/* CARD 1: Weekly Summary */}
+                      <Card sx={{ mb: 3, border: '1px solid #0f172a' }}>
+                        <CardContent sx={{ p: 3 }}>
+                          <Typography variant="h6" sx={{ fontSize: '1.05rem', fontWeight: 700, mb: 2, color: '#0f172a' }}>
+                            1. Weekly Summary
+                          </Typography>
+                          {renderCardContent('weekly_summary', 'Executive Weekly Summary', 'No weekly summary recorded.')}
+                        </CardContent>
+                      </Card>
 
-                      {/* Tab 0: Executive & Risk */}
-                      {(activeTab === 0 || activeTab === 3) && (
-                        <Grid container spacing={2.5} sx={{ mb: 3 }}>
-                          <Grid item xs={12}>
-                            <Card sx={{ border: '1px solid #0f172a' }}>
-                              <CardContent sx={{ p: 3 }}>
-                                <Box display="flex" justifyContent="space-between" alignItems="center" gap={2} mb={1.5}>
-                                  <Typography variant="h6" sx={{ fontSize: '1rem', fontWeight: 700 }}>
-                                    Weekly Summary
-                                  </Typography>
-                                  <Box display="flex" gap={1}>
-                                    <Chip label={summaryData.classification} size="small" color={getBadgeColor(summaryData.classification)} />
-                                    {summaryData.confidence && <Chip label={`Confidence: ${summaryData.confidence}`} size="small" variant="outlined" />}
-                                  </Box>
-                                </Box>
-
-                                {isEditing ? (
-                                  <TextField
-                                    fullWidth
-                                    multiline
-                                    rows={4}
-                                    value={editedSummaries['weekly_summary'] || ''}
-                                    onChange={(e) => handleSummaryChange('weekly_summary', e.target.value)}
-                                    size="small"
-                                  />
-                                ) : (
-                                  <Typography variant="body1">
-                                    {summaryData.summary || 'No weekly summary recorded.'}
-                                  </Typography>
-                                )}
-
-                                {summaryData.evidence && (
-                                  <Box sx={{ p: 1.5, bgcolor: '#f8fafc', borderLeft: '3px solid #0f172a', mt: 2, borderRadius: '0 4px 4px 0' }}>
-                                    <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic', display: 'block' }}>
-                                      "{summaryData.evidence}"
-                                    </Typography>
-                                  </Box>
-                                )}
-                              </CardContent>
-                            </Card>
+                      {/* CARD 2: Health Metrics (Nutrition, Exercise, Steps, Sleep, Water Intake) */}
+                      <Card sx={{ mb: 3, border: '1px solid #cbd5e1' }}>
+                        <CardContent sx={{ p: 3 }}>
+                          <Typography variant="h6" sx={{ fontSize: '1.05rem', fontWeight: 700, mb: 2.5, color: '#0f172a' }}>
+                            2. Health Metrics
+                          </Typography>
+                          <Grid container spacing={2.5}>
+                            <Grid item xs={12} sm={6}>
+                              <Paper sx={{ p: 2, border: '1px solid #e2e8f0' }}>
+                                {renderCardContent('nutrition', 'Nutrition & Diet', 'No nutrition details reported.')}
+                              </Paper>
+                            </Grid>
+                            <Grid item xs={12} sm={6}>
+                              <Paper sx={{ p: 2, border: '1px solid #e2e8f0' }}>
+                                {renderCardContent('exercise', 'Exercise & Workouts', 'No exercise details reported.')}
+                              </Paper>
+                            </Grid>
+                            <Grid item xs={12} sm={6}>
+                              <Paper sx={{ p: 2, border: '1px solid #e2e8f0' }}>
+                                {renderCardContent('steps', 'Steps Activity', 'No step count reported.')}
+                              </Paper>
+                            </Grid>
+                            <Grid item xs={12} sm={6}>
+                              <Paper sx={{ p: 2, border: '1px solid #e2e8f0' }}>
+                                {renderCardContent('sleep', 'Sleep Analysis', 'No sleep details reported.')}
+                              </Paper>
+                            </Grid>
+                            <Grid item xs={12} sm={6}>
+                              <Paper sx={{ p: 2, border: '1px solid #e2e8f0' }}>
+                                {renderCardContent('water', 'Water Intake', 'No water intake reported.')}
+                              </Paper>
+                            </Grid>
                           </Grid>
-                        </Grid>
-                      )}
+                        </CardContent>
+                      </Card>
 
-                      {/* Filtered Metric Cards based on Tab Selection */}
-                      <Grid container spacing={2.5}>
-                        {cardConfigs
-                          .filter(cfg => {
-                            if (activeTab === 3) return true;
-                            if (activeTab === 0 && cfg.category === 'overview') return true;
-                            if (activeTab === 1 && cfg.category === 'vitals') return true;
-                            if (activeTab === 2 && cfg.category === 'action') return true;
-                            return false;
-                          })
-                          .map(config => {
-                            const data = result[config.key] || { summary: null, classification: 'Missing Information', confidence: null, evidence: null };
-                            const hasData = data.summary !== null && data.classification !== 'Missing Information';
+                      {/* CARD 3: Wellness (Stress, Symptoms, Energy) */}
+                      <Card sx={{ mb: 3, border: '1px solid #cbd5e1' }}>
+                        <CardContent sx={{ p: 3 }}>
+                          <Typography variant="h6" sx={{ fontSize: '1.05rem', fontWeight: 700, mb: 2.5, color: '#0f172a' }}>
+                            3. Wellness
+                          </Typography>
+                          <Grid container spacing={2.5}>
+                            <Grid item xs={12} sm={4}>
+                              <Paper sx={{ p: 2, border: '1px solid #e2e8f0' }}>
+                                {renderCardContent('stress', 'Stress Level', 'No stress details reported.')}
+                              </Paper>
+                            </Grid>
+                            <Grid item xs={12} sm={4}>
+                              <Paper sx={{ p: 2, border: '1px solid #e2e8f0' }}>
+                                {renderCardContent('symptoms', 'Symptoms & Concerns', 'No symptoms reported.')}
+                              </Paper>
+                            </Grid>
+                            <Grid item xs={12} sm={4}>
+                              <Paper sx={{ p: 2, border: '1px solid #e2e8f0' }}>
+                                {renderCardContent('energy', 'Energy Levels', 'No energy level details reported.')}
+                              </Paper>
+                            </Grid>
+                          </Grid>
+                        </CardContent>
+                      </Card>
 
-                            return (
-                              <Grid item xs={12} sm={6} key={config.key}>
-                                <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                                  <CardContent sx={{ p: 2.5, display: 'flex', flexDirection: 'column', height: '100%' }}>
-                                    
-                                    <Box display="flex" justifyContent="space-between" alignItems="flex-start" gap={2} mb={1.5}>
-                                      <Typography variant="h6" sx={{ fontSize: '0.95rem', fontWeight: 700 }}>
-                                        {config.title}
-                                      </Typography>
-                                      <Chip label={data.classification} size="small" color={getBadgeColor(data.classification)} />
-                                    </Box>
+                      {/* CARD 4: Progress Analysis */}
+                      <Card sx={{ mb: 3, border: '1px solid #cbd5e1' }}>
+                        <CardContent sx={{ p: 3 }}>
+                          <Typography variant="h6" sx={{ fontSize: '1.05rem', fontWeight: 700, mb: 2, color: '#0f172a' }}>
+                            4. Progress Analysis
+                          </Typography>
+                          {renderCardContent('progress_analysis', 'Overall Progress Trajectory', 'Client is maintaining consistent tracking. Progress analysis derived from session outcomes.')}
+                        </CardContent>
+                      </Card>
 
-                                    {isEditing ? (
-                                      <TextField
-                                        fullWidth
-                                        multiline
-                                        rows={3}
-                                        value={editedSummaries[config.key] || ''}
-                                        onChange={(e) => handleSummaryChange(config.key, e.target.value)}
-                                        size="small"
-                                        sx={{ mb: 2 }}
-                                      />
-                                    ) : (
-                                      <Typography variant="body1" sx={{ mb: 2, flexGrow: 1, color: hasData ? 'text.primary' : 'text.secondary', fontStyle: hasData ? 'normal' : 'italic' }}>
-                                        {data.summary || 'No details mentioned in session.'}
-                                      </Typography>
-                                    )}
+                      {/* CARD 5: Key Barriers */}
+                      <Card sx={{ mb: 3, border: '1px solid #cbd5e1' }}>
+                        <CardContent sx={{ p: 3 }}>
+                          <Typography variant="h6" sx={{ fontSize: '1.05rem', fontWeight: 700, mb: 2, color: '#0f172a' }}>
+                            5. Key Barriers
+                          </Typography>
+                          {renderCardContent('key_barriers', 'Primary Obstacles & Challenges', 'No key barriers reported.')}
+                        </CardContent>
+                      </Card>
 
-                                    {hasData && (
-                                      <Box sx={{ mt: 'auto' }}>
-                                        {data.confidence && (
-                                          <Box mb={1}>
-                                            <Chip label={`Confidence: ${data.confidence}`} size="small" variant="outlined" />
-                                          </Box>
-                                        )}
-                                        {data.evidence && (
-                                          <Box sx={{ p: 1.5, bgcolor: '#f8fafc', borderLeft: '2px solid #0f172a', borderRadius: '0 4px 4px 0' }}>
-                                            <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic', display: 'block', lineHeight: 1.4 }}>
-                                              "{data.evidence}"
-                                            </Typography>
-                                          </Box>
-                                        )}
-                                      </Box>
-                                    )}
-                                  </CardContent>
-                                </Card>
-                              </Grid>
-                            );
-                          })}
-                      </Grid>
+                      {/* CARD 6: Risk Flags */}
+                      <Card sx={{ mb: 3, border: '1px solid #dc2626' }}>
+                        <CardContent sx={{ p: 3 }}>
+                          <Typography variant="h6" sx={{ fontSize: '1.05rem', fontWeight: 700, mb: 2, color: '#dc2626' }}>
+                            6. Risk Flags
+                          </Typography>
+                          {renderCardContent('risk_flags', 'Warning Flags & Risk Factors', 'No critical risk flags detected in session.')}
+                        </CardContent>
+                      </Card>
 
-                      {/* Supporting Evidence Accordion */}
-                      {(activeTab === 2 || activeTab === 3) && (
-                        <Box mt={3}>
-                          <Accordion sx={{ border: '1px solid #e2e8f0', boxShadow: 'none', borderRadius: '6px !important' }}>
-                            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                              <Box display="flex" justifyContent="space-between" alignItems="center" width="100%" sx={{ pr: 2 }}>
-                                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                                  Supporting Evidence Meta-Observations
-                                </Typography>
-                                <Chip label={evidenceData.classification} size="small" color={getBadgeColor(evidenceData.classification)} />
-                              </Box>
-                            </AccordionSummary>
-                            <AccordionDetails sx={{ borderTop: '1px solid #e2e8f0', p: 3 }}>
-                              {isEditing ? (
-                                <TextField
-                                  fullWidth
-                                  multiline
-                                  rows={3}
-                                  value={editedSummaries['supporting_evidence'] || ''}
-                                  onChange={(e) => handleSummaryChange('supporting_evidence', e.target.value)}
-                                  size="small"
-                                />
-                              ) : (
-                                <Typography variant="body1" sx={{ mb: 2 }}>
-                                  {evidenceData.summary || 'No overall supporting evidence observations logged.'}
-                                </Typography>
-                              )}
+                      {/* CARD 7: Coach Recommendations */}
+                      <Card sx={{ mb: 3, border: '1px solid #cbd5e1' }}>
+                        <CardContent sx={{ p: 3 }}>
+                          <Typography variant="h6" sx={{ fontSize: '1.05rem', fontWeight: 700, mb: 2, color: '#0f172a' }}>
+                            7. Coach Recommendations
+                          </Typography>
+                          {renderCardContent('coach_recommendation', 'Actionable Coach Directives', 'No specific coach recommendations logged.')}
+                        </CardContent>
+                      </Card>
 
-                              {evidenceData.evidence && (
-                                <Box sx={{ p: 1.5, bgcolor: '#f8fafc', borderLeft: '3px solid #0f172a', borderRadius: '0 4px 4px 0' }}>
-                                  <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic', display: 'block' }}>
-                                    "{evidenceData.evidence}"
-                                  </Typography>
-                                </Box>
-                              )}
-                            </AccordionDetails>
-                          </Accordion>
-                        </Box>
-                      )}
+                      {/* CARD 8: Pending Follow-ups */}
+                      <Card sx={{ mb: 3, border: '1px solid #cbd5e1' }}>
+                        <CardContent sx={{ p: 3 }}>
+                          <Typography variant="h6" sx={{ fontSize: '1.05rem', fontWeight: 700, mb: 2, color: '#0f172a' }}>
+                            8. Pending Follow-ups
+                          </Typography>
+                          {renderCardContent('pending_followups', 'Action Items & Commits', getSectionData('pending_actions').summary || 'No pending follow-ups.')}
+                        </CardContent>
+                      </Card>
+
+                      {/* CARD 9: Supporting Evidence */}
+                      <Card sx={{ mb: 3, border: '1px solid #cbd5e1' }}>
+                        <CardContent sx={{ p: 3 }}>
+                          <Typography variant="h6" sx={{ fontSize: '1.05rem', fontWeight: 700, mb: 2, color: '#0f172a' }}>
+                            9. Supporting Evidence
+                          </Typography>
+                          {renderCardContent('supporting_evidence', 'Exact Transcript Quotes & Verifications', 'No transcript evidence quotes extracted.')}
+                        </CardContent>
+                      </Card>
 
                     </Box>
                   );

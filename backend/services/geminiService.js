@@ -103,8 +103,26 @@ Your JSON output must follow this exact structure (do not add or change top-leve
     "confidence": "High | Medium | Low | null",
     "evidence": "Exact quote, or null"
   },
+  "energy": {
+    "summary": "Energy levels and fatigue patterns, or null",
+    "classification": "Confirmed Fact | Client Reported | AI Inference | Missing Information",
+    "confidence": "High | Medium | Low | null",
+    "evidence": "Exact quote, or null"
+  },
+  "progress_analysis": {
+    "summary": "Overall progress analysis and trajectory, or null",
+    "classification": "Confirmed Fact | Client Reported | AI Inference | Missing Information",
+    "confidence": "High | Medium | Low | null",
+    "evidence": "Exact quote, or null"
+  },
   "key_barriers": {
     "summary": "Key barriers to goals, or null",
+    "classification": "Confirmed Fact | Client Reported | AI Inference | Missing Information",
+    "confidence": "High | Medium | Low | null",
+    "evidence": "Exact quote, or null"
+  },
+  "pending_followups": {
+    "summary": "Pending follow-ups and next steps, or null",
     "classification": "Confirmed Fact | Client Reported | AI Inference | Missing Information",
     "confidence": "High | Medium | Low | null",
     "evidence": "Exact quote, or null"
