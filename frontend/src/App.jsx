@@ -180,10 +180,9 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           background: '#ffffff',
-          border: '1px solid #e2e8f0',
-          boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03)',
-          borderRadius: 6,
-          transition: 'border-color 0.15s ease',
+          border: '1px solid #cbd5e1',
+          boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.04)',
+          borderRadius: 8,
         },
       },
     },
@@ -237,7 +236,6 @@ function App() {
 
   // UI & Layout States
   const [activeTab, setActiveTab] = useState(0);
-  const [dualPaneView, setDualPaneView] = useState(false);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
   // Human Review & Editing States
@@ -265,9 +263,7 @@ function App() {
       sessionDate: sample.sessionDate
     });
     setError('');
-    setResult(null);
-    setIsEditing(false);
-    triggerSnackbar(`Loaded session preset for ${sample.clientName}`, 'info');
+    triggerSnackbar(`Loaded transcript for ${sample.clientName}. Report remains visible.`, 'info');
   };
 
   const handleFileUpload = (e) => {
@@ -286,12 +282,24 @@ function App() {
     const reader = new FileReader();
     reader.onload = (event) => {
       setConversationText(event.target.result);
-      triggerSnackbar(`File "${file.name}" uploaded successfully`, 'success');
+      triggerSnackbar(`Loaded file "${file.name}".`, 'success');
     };
     reader.readAsText(file);
   };
 
-  const handleClear = () => {
+  // Clear Conversation text without deleting generated report
+  const handleClearConversation = () => {
+    setConversationText('');
+    setFileName('');
+    setError('');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+    triggerSnackbar('Conversation text cleared.', 'info');
+  };
+
+  // Full reset workspace (including report)
+  const handleResetSession = () => {
     setConversationText('');
     setFileName('');
     setError('');
@@ -300,6 +308,7 @@ function App() {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+    triggerSnackbar('Session reset completely.', 'info');
   };
 
   const triggerSnackbar = (msg, severity = 'info') => {
@@ -309,18 +318,16 @@ function App() {
   };
 
   const handleAnalyze = async () => {
-    if (loading) return; // Prevent duplicate requests
+    if (loading) return;
 
     if (!conversationText.trim()) {
-      setError('Please paste a coaching transcript or select a sample session.');
+      setError('Please paste a coaching transcript or upload a .txt file.');
       triggerSnackbar('Transcript text cannot be empty.', 'error');
       return;
     }
 
     setLoading(true);
     setError('');
-    setResult(null);
-    setIsEditing(false);
 
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
@@ -342,19 +349,13 @@ function App() {
           if (errData && errData.error) {
             errMsg = errData.error;
           }
-        } catch (e) {
-          // Ignore json parse error
-        }
+        } catch (e) {}
         throw new Error(errMsg);
       }
 
       const data = await response.json();
       setResult(data);
-      triggerSnackbar('Client intelligence generated successfully!', 'success');
-      
-      setTimeout(() => {
-        resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 100);
+      triggerSnackbar('Client intelligence report generated!', 'success');
     } catch (err) {
       console.error(err);
       let errMsg = 'An unexpected server error occurred.';
@@ -616,7 +617,7 @@ function App() {
         <Box component="main" sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
           
           {/* Top Application Header Bar */}
-          <AppBar position="sticky" elevation={0} sx={{ bgcolor: '#ffffff', borderBottom: '1px solid #e2e8f0', color: '#0f172a' }}>
+          <AppBar position="sticky" elevation={0} sx={{ bgcolor: '#ffffff', borderBottom: '1px solid #e2e8f0', color: '#0f172a', zIndex: 1100 }}>
             <Toolbar sx={{ justifyContent: 'space-between' }}>
               <Box display="flex" alignItems="center" gap={1.5}>
                 <IconButton color="inherit" onClick={() => setMobileDrawerOpen(true)} sx={{ display: { md: 'none' } }}>
@@ -628,387 +629,347 @@ function App() {
                 </Typography>
               </Box>
 
-              <Box display="flex" alignItems="center" sx={{ gap: 2.5, flexWrap: 'wrap' }}>
+              <Box display="flex" alignItems="center" sx={{ gap: 2, flexWrap: 'wrap' }}>
                 <Chip
                   icon={<AuditIcon fontSize="small" />}
                   label={`Audit Queue: ${auditHistory.length} Reviewed`}
                   variant="outlined"
                   size="small"
-                  sx={{ display: { xs: 'none', sm: 'inline-flex' }, mr: 2 }}
+                  sx={{ display: { xs: 'none', sm: 'inline-flex' }, mr: 1.5 }}
                 />
-                <Button variant="outlined" size="small" onClick={handleClear} startIcon={<ResetIcon fontSize="small" />}>
+                <Button variant="outlined" size="small" onClick={handleResetSession} startIcon={<ResetIcon fontSize="small" />}>
                   Reset Session
                 </Button>
               </Box>
             </Toolbar>
           </AppBar>
 
-          <Container maxWidth="xl" sx={{ mt: 3, mb: 8, px: { xs: 2, md: 4 } }}>
-            
-            {/* Session Metadata & Input Card */}
-            <Card sx={{ mb: 4, border: '1px solid #cbd5e1' }}>
-              <CardContent sx={{ p: 4 }}>
-                
-                {/* Header & Subtitle */}
-                <Box sx={{ mb: 3 }}>
-                  <Typography variant="h6" sx={{ fontSize: '1.15rem', fontWeight: 700, color: '#0f172a', mb: 0.5 }}>
-                    Client Session Configuration
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Attach client metadata and paste coaching conversation transcript below.
-                  </Typography>
-                </Box>
+          {/* TWO-PANEL RESPONSIVE CONTAINER */}
+          <Container maxWidth="xl" sx={{ mt: 3, mb: 8, px: { xs: 2, md: 3 } }}>
+            <Grid container spacing={3}>
+              
+              {/* LEFT PANEL: Upload & Conversation Input */}
+              <Grid item xs={12} lg={5}>
+                <Card sx={{ border: '1px solid #cbd5e1', position: { lg: 'sticky' }, top: { lg: 84 } }}>
+                  <CardContent sx={{ p: 3 }}>
+                    
+                    <Box sx={{ mb: 2.5 }}>
+                      <Typography variant="h6" sx={{ fontSize: '1.1rem', fontWeight: 700, color: '#0f172a', mb: 0.5 }}>
+                        Session Transcript Input
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Upload or paste a client conversation to analyze.
+                      </Typography>
+                    </Box>
 
-                {/* Metadata Fields Row */}
-                <Grid container spacing={2.5} sx={{ mb: 3.5 }}>
-                  <Grid item xs={12} sm={3}>
+                    {/* Metadata Grid */}
+                    <Grid container spacing={2} sx={{ mb: 2.5 }}>
+                      <Grid item xs={12} sm={6}>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          label="Client Name"
+                          value={clientMetadata.clientName}
+                          onChange={(e) => setClientMetadata({ ...clientMetadata, clientName: e.target.value })}
+                        />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          label="Client ID"
+                          value={clientMetadata.clientId}
+                          onChange={(e) => setClientMetadata({ ...clientMetadata, clientId: e.target.value })}
+                        />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <FormControl fullWidth size="small">
+                          <InputLabel>Session Type</InputLabel>
+                          <Select
+                            value={clientMetadata.sessionType}
+                            label="Session Type"
+                            onChange={(e) => setClientMetadata({ ...clientMetadata, sessionType: e.target.value })}
+                          >
+                            <MenuItem value="Weekly Review">Weekly Review</MenuItem>
+                            <MenuItem value="Exercise & Stress Sync">Exercise & Stress Sync</MenuItem>
+                            <MenuItem value="Nutrition & Rehab Sync">Nutrition & Rehab Sync</MenuItem>
+                            <MenuItem value="SOS Check-in">SOS Check-in</MenuItem>
+                          </Select>
+                        </FormControl>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          type="date"
+                          label="Session Date"
+                          InputLabelProps={{ shrink: true }}
+                          value={clientMetadata.sessionDate}
+                          onChange={(e) => setClientMetadata({ ...clientMetadata, sessionDate: e.target.value })}
+                        />
+                      </Grid>
+                    </Grid>
+
+                    {error && (
+                      <Alert severity="error" sx={{ mb: 2.5, borderRadius: 1 }} onClose={() => setError('')}>
+                        {error}
+                      </Alert>
+                    )}
+
+                    {/* Large Conversation Textarea */}
                     <TextField
                       fullWidth
-                      size="small"
-                      label="Client Name"
-                      value={clientMetadata.clientName}
-                      onChange={(e) => setClientMetadata({ ...clientMetadata, clientName: e.target.value })}
+                      multiline
+                      rows={11}
+                      variant="outlined"
+                      placeholder="Paste client-coach conversation transcript here..."
+                      value={conversationText}
+                      onChange={(e) => setConversationText(e.target.value)}
+                      sx={{ mb: 2.5 }}
                     />
-                  </Grid>
-                  <Grid item xs={12} sm={3}>
-                    <TextField
-                      fullWidth
-                      size="small"
-                      label="Client ID"
-                      value={clientMetadata.clientId}
-                      onChange={(e) => setClientMetadata({ ...clientMetadata, clientId: e.target.value })}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={3}>
-                    <FormControl fullWidth size="small">
-                      <InputLabel>Session Type</InputLabel>
-                      <Select
-                        value={clientMetadata.sessionType}
-                        label="Session Type"
-                        onChange={(e) => setClientMetadata({ ...clientMetadata, sessionType: e.target.value })}
+
+                    {/* Left Panel Actions */}
+                    <Box display="flex" flexDirection="column" gap={2}>
+                      
+                      {/* Upload & Clear Row */}
+                      <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1.5}>
+                        <Box display="flex" alignItems="center" gap={1.5} flexWrap="wrap">
+                          <input
+                            type="file"
+                            accept=".txt"
+                            style={{ display: 'none' }}
+                            id="left-panel-upload-file"
+                            ref={fileInputRef}
+                            onChange={handleFileUpload}
+                          />
+                          <label htmlFor="left-panel-upload-file" style={{ marginRight: '8px', display: 'inline-block' }}>
+                            <Button variant="outlined" component="span" startIcon={<CloudUploadIcon />} size="medium">
+                              Upload .txt
+                            </Button>
+                          </label>
+                          <Button variant="outlined" color="inherit" size="medium" startIcon={<ResetIcon />} onClick={handleClearConversation}>
+                            Clear Conversation
+                          </Button>
+                        </Box>
+
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+                          {conversationText ? `${conversationText.length} chars | ${conversationText.split(/\s+/).filter(Boolean).length} words` : 'Empty transcript'}
+                        </Typography>
+                      </Box>
+
+                      {/* Primary Generate Intelligence Button */}
+                      <Button
+                        fullWidth
+                        variant="contained"
+                        size="large"
+                        onClick={handleAnalyze}
+                        disabled={loading}
+                        startIcon={loading ? <CircularProgress size={18} color="inherit" /> : <AutoAwesomeIcon />}
+                        sx={{ py: 1.3, fontSize: '0.95rem', fontWeight: 700, mt: 0.5 }}
                       >
-                        <MenuItem value="Weekly Review">Weekly Review</MenuItem>
-                        <MenuItem value="Exercise & Stress Sync">Exercise & Stress Sync</MenuItem>
-                        <MenuItem value="Nutrition & Rehab Sync">Nutrition & Rehab Sync</MenuItem>
-                        <MenuItem value="SOS Check-in">SOS Check-in</MenuItem>
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                  <Grid item xs={12} sm={3}>
-                    <TextField
-                      fullWidth
-                      size="small"
-                      type="date"
-                      label="Session Date"
-                      InputLabelProps={{ shrink: true }}
-                      value={clientMetadata.sessionDate}
-                      onChange={(e) => setClientMetadata({ ...clientMetadata, sessionDate: e.target.value })}
-                    />
-                  </Grid>
-                </Grid>
+                        {loading ? 'Analyzing Conversation...' : 'Generate Intelligence'}
+                      </Button>
+                    </Box>
 
-                {error && (
-                  <Alert severity="error" sx={{ mb: 3, borderRadius: 1 }} onClose={() => setError('')}>
-                    {error}
-                  </Alert>
+                  </CardContent>
+                </Card>
+              </Grid>
+
+              {/* RIGHT PANEL: Generated Client Intelligence Report */}
+              <Grid item xs={12} lg={7}>
+                
+                {loading && (
+                  <Paper sx={{ p: 6, textAlign: 'center', borderRadius: 2, bgcolor: '#ffffff', mb: 3, border: '1px solid #cbd5e1' }}>
+                    <CircularProgress color="primary" size={38} sx={{ mb: 2 }} />
+                    <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                      Generating Client Intelligence...
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                      Parsing health metrics, evaluating compliance, and verifying supporting quotes against transcript.
+                    </Typography>
+                  </Paper>
                 )}
 
-                {/* Transcript Input Area */}
-                <TextField
-                  fullWidth
-                  multiline
-                  rows={7}
-                  variant="outlined"
-                  placeholder="Paste client-coach conversation transcript here..."
-                  value={conversationText}
-                  onChange={(e) => setConversationText(e.target.value)}
-                  sx={{ mb: 3 }}
-                />
+                {result ? (() => {
+                  const cardConfigs = [
+                    { key: 'nutrition', title: 'Nutrition & Diet', category: 'vitals' },
+                    { key: 'exercise', title: 'Exercise & Workouts', category: 'vitals' },
+                    { key: 'steps', title: 'Steps Activity', category: 'vitals' },
+                    { key: 'sleep', title: 'Sleep Analysis', category: 'vitals' },
+                    { key: 'water', title: 'Hydration & Water', category: 'vitals' },
+                    { key: 'symptoms', title: 'Symptoms & Concerns', category: 'vitals' },
+                    { key: 'stress', title: 'Stress & Well-being', category: 'vitals' },
+                    { key: 'engagement_level', title: 'Engagement Level', category: 'overview' },
+                    { key: 'key_barriers', title: 'Key Barriers', category: 'overview' },
+                    { key: 'pending_actions', title: 'Pending Actions', category: 'action' },
+                    { key: 'risk_flags', title: 'Risk Flags & Warnings', category: 'overview' },
+                    { key: 'coach_recommendation', title: 'Coach Recommendations', category: 'action' }
+                  ];
 
-                {/* Toolbar Controls */}
-                <Box
-                  display="flex"
-                  flexDirection={{ xs: 'column', sm: 'row' }}
-                  justifyContent="space-between"
-                  alignItems={{ xs: 'flex-start', sm: 'center' }}
-                  sx={{ gap: 3, pt: 1, mt: 1 }}
-                >
-                  <Box display="flex" alignItems="center" flexWrap="wrap" sx={{ gap: 2.5, rowGap: 2 }}>
-                    <input
-                      type="file"
-                      accept=".txt"
-                      style={{ display: 'none' }}
-                      id="contained-button-file"
-                      ref={fileInputRef}
-                      onChange={handleFileUpload}
-                    />
-                    <label htmlFor="contained-button-file" style={{ marginRight: '16px', marginBottom: '8px', display: 'inline-block' }}>
-                      <Button variant="outlined" component="span" startIcon={<CloudUploadIcon />} size="medium" sx={{ px: 2.5, py: 0.85 }}>
-                        Upload .txt
-                      </Button>
-                    </label>
-                    {fileName && <Chip icon={<FileIcon fontSize="small" />} label={fileName} onDelete={handleClear} size="small" variant="outlined" sx={{ mr: 2, mb: 1 }} />}
-                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500, fontSize: '0.825rem', whiteSpace: 'nowrap', mb: 1 }}>
-                      {conversationText ? `${conversationText.length} characters | ${conversationText.split(/\s+/).filter(Boolean).length} words` : 'Empty transcript'}
-                    </Typography>
-                  </Box>
+                  const summaryData = result.weekly_summary || { summary: null, classification: 'Missing Information', confidence: null, evidence: null };
+                  const evidenceData = result.supporting_evidence || { summary: null, classification: 'Missing Information', confidence: null, evidence: null };
 
-                  <Button
-                    variant="contained"
-                    onClick={handleAnalyze}
-                    disabled={loading}
-                    startIcon={loading ? <CircularProgress size={16} color="inherit" /> : <AutoAwesomeIcon fontSize="small" />}
-                    sx={{ px: 3.5, py: 1.1, fontSize: '0.9rem', fontWeight: 700, whiteSpace: 'nowrap', mt: { xs: 1.5, sm: 0 } }}
-                  >
-                    {loading ? 'Analyzing...' : 'Generate AI Intelligence'}
-                  </Button>
-                </Box>
-              </CardContent>
-            </Card>
+                  const getOverallHealthStatus = () => {
+                    const hasRisk = result.risk_flags && result.risk_flags.summary && result.risk_flags.classification !== 'Missing Information';
+                    const hasSymptoms = result.symptoms && result.symptoms.summary && result.symptoms.classification !== 'Missing Information';
+                    if (hasRisk) return { label: 'Needs Attention', color: 'error' };
+                    if (hasSymptoms) return { label: 'Monitoring', color: 'warning' };
+                    return { label: 'Stable / Good', color: 'success' };
+                  };
 
-            {/* Loading Indicator */}
-            {loading && (
-              <Paper sx={{ p: 5, textAlign: 'center', borderRadius: 2, bgcolor: '#ffffff', mb: 4 }}>
-                <CircularProgress color="primary" size={36} sx={{ mb: 2 }} />
-                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                  Analyzing conversation...
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Parsing health metrics, evaluating compliance, and verifying supporting quotes against transcript.
-                </Typography>
-              </Paper>
-            )}
+                  const getOverallEngagementStatus = () => {
+                    const eng = result.engagement_level;
+                    if (!eng || !eng.summary || eng.classification === 'Missing Information') return { label: 'Not Measured', color: 'default' };
+                    const sum = eng.summary.toLowerCase();
+                    if (sum.includes('high') || sum.includes('excellent') || sum.includes('good') || sum.includes('active') || sum.includes('enthusiastic')) {
+                      return { label: 'High Adherence', color: 'success' };
+                    }
+                    if (sum.includes('low') || sum.includes('struggle') || sum.includes('poor')) return { label: 'Low Adherence', color: 'error' };
+                    return { label: 'Moderate', color: 'info' };
+                  };
 
-            {/* Structured Clinical Intelligence Results Workspace */}
-            {result && (() => {
-              const cardConfigs = [
-                { key: 'nutrition', title: 'Nutrition & Diet', category: 'vitals' },
-                { key: 'exercise', title: 'Exercise & Workouts', category: 'vitals' },
-                { key: 'steps', title: 'Steps Activity', category: 'vitals' },
-                { key: 'sleep', title: 'Sleep Analysis', category: 'vitals' },
-                { key: 'water', title: 'Hydration & Water', category: 'vitals' },
-                { key: 'symptoms', title: 'Symptoms & Concerns', category: 'vitals' },
-                { key: 'stress', title: 'Stress & Well-being', category: 'vitals' },
-                { key: 'engagement_level', title: 'Engagement Level', category: 'overview' },
-                { key: 'key_barriers', title: 'Key Barriers', category: 'overview' },
-                { key: 'pending_actions', title: 'Pending Actions', category: 'action' },
-                { key: 'risk_flags', title: 'Risk Flags & Warnings', category: 'overview' },
-                { key: 'coach_recommendation', title: 'Coach Recommendations', category: 'action' }
-              ];
+                  const getOverallRiskStatus = () => {
+                    const risk = result.risk_flags;
+                    const symptoms = result.symptoms;
+                    const barriers = result.key_barriers;
+                    const hasRisk = risk && risk.summary && risk.classification !== 'Missing Information';
+                    const hasBarriersOrSymptoms = (symptoms && symptoms.summary && symptoms.classification !== 'Missing Information') ||
+                                                 (barriers && barriers.summary && barriers.classification !== 'Missing Information');
+                    if (hasRisk) return { label: 'High Risk', color: 'error' };
+                    if (hasBarriersOrSymptoms) return { label: 'Medium Risk', color: 'warning' };
+                    return { label: 'Low Risk', color: 'success' };
+                  };
 
-              const summaryData = result.weekly_summary || { summary: null, classification: 'Missing Information', confidence: null, evidence: null };
-              const evidenceData = result.supporting_evidence || { summary: null, classification: 'Missing Information', confidence: null, evidence: null };
-
-              // Helper calculations for overall triage status
-              const getOverallHealthStatus = () => {
-                const hasRisk = result.risk_flags && result.risk_flags.summary && result.risk_flags.classification !== 'Missing Information';
-                const hasSymptoms = result.symptoms && result.symptoms.summary && result.symptoms.classification !== 'Missing Information';
-                if (hasRisk) return { label: 'Needs Attention', color: 'error' };
-                if (hasSymptoms) return { label: 'Monitoring', color: 'warning' };
-                return { label: 'Stable / Good', color: 'success' };
-              };
-
-              const getOverallEngagementStatus = () => {
-                const eng = result.engagement_level;
-                if (!eng || !eng.summary || eng.classification === 'Missing Information') return { label: 'Not Measured', color: 'default' };
-                const sum = eng.summary.toLowerCase();
-                if (sum.includes('high') || sum.includes('excellent') || sum.includes('good') || sum.includes('active') || sum.includes('enthusiastic')) {
-                  return { label: 'High Adherence', color: 'success' };
-                }
-                if (sum.includes('low') || sum.includes('struggle') || sum.includes('poor')) return { label: 'Low Adherence', color: 'error' };
-                return { label: 'Moderate', color: 'info' };
-              };
-
-              const getOverallRiskStatus = () => {
-                const risk = result.risk_flags;
-                const symptoms = result.symptoms;
-                const barriers = result.key_barriers;
-                const hasRisk = risk && risk.summary && risk.classification !== 'Missing Information';
-                const hasBarriersOrSymptoms = (symptoms && symptoms.summary && symptoms.classification !== 'Missing Information') ||
-                                             (barriers && barriers.summary && barriers.classification !== 'Missing Information');
-                if (hasRisk) return { label: 'High Risk', color: 'error' };
-                if (hasBarriersOrSymptoms) return { label: 'Medium Risk', color: 'warning' };
-                return { label: 'Low Risk', color: 'success' };
-              };
-
-              return (
-                <Box ref={resultRef}>
-                  
-                  {/* Results Header Toolbar */}
-                  <Paper sx={{ p: 2.5, mb: 3, border: '1px solid #cbd5e1', bgcolor: '#ffffff' }}>
-                    <Box display="flex" flexDirection={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ md: 'center' }} gap={2}>
-                      <Box>
-                        <Box display="flex" alignItems="center" gap={1.5} flexWrap="wrap">
-                          <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1.15rem' }}>
-                            Clinical Intelligence Report
-                          </Typography>
-                          <Chip label={clientMetadata.clientName} color="primary" size="small" />
-                          <Chip label={clientMetadata.clientId} variant="outlined" size="small" />
-                          <Chip label={clientMetadata.sessionDate} variant="outlined" size="small" />
-                        </Box>
-                        <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-                          Generated via Gemini 2.5 | Audit Status: <strong>{result.human_review?.status || 'Pending'}</strong>
-                        </Typography>
-                      </Box>
-
-                      {/* Header Actions & Dual Pane Switch */}
-                      <Box display="flex" alignItems="center" gap={1.5} flexWrap="wrap">
-                        <FormControlLabel
-                          control={
-                            <Switch
-                              checked={dualPaneView}
-                              onChange={(e) => setDualPaneView(e.target.checked)}
-                              color="primary"
-                              size="small"
-                            />
-                          }
-                          label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Split View (Side-by-Side)</Typography>}
-                        />
-                        <Button variant="outlined" size="small" startIcon={<CopyIcon />} onClick={handleCopyToEhr}>
-                          Copy to EHR Notes
-                        </Button>
-                        <Button variant="outlined" size="small" startIcon={<DownloadIcon />} onClick={handleExportJson}>
-                          Export JSON
-                        </Button>
-                      </Box>
-                    </Box>
-                  </Paper>
-
-                  {/* Summary Triage Row */}
-                  <Grid container spacing={2} sx={{ mb: 3 }}>
-                    <Grid item xs={12} sm={4}>
-                      <Card sx={{ textAlign: 'center', p: 2 }}>
-                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: 'uppercase' }}>
-                          Overall Health Status
-                        </Typography>
-                        <Box mt={1}>
-                          <Chip label={getOverallHealthStatus().label} color={getOverallHealthStatus().color} sx={{ fontWeight: 700, px: 1 }} />
-                        </Box>
-                      </Card>
-                    </Grid>
-                    <Grid item xs={12} sm={4}>
-                      <Card sx={{ textAlign: 'center', p: 2 }}>
-                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: 'uppercase' }}>
-                          Client Engagement Level
-                        </Typography>
-                        <Box mt={1}>
-                          <Chip label={getOverallEngagementStatus().label} color={getOverallEngagementStatus().color} sx={{ fontWeight: 700, px: 1 }} />
-                        </Box>
-                      </Card>
-                    </Grid>
-                    <Grid item xs={12} sm={4}>
-                      <Card sx={{ textAlign: 'center', p: 2 }}>
-                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: 'uppercase' }}>
-                          Risk Rating
-                        </Typography>
-                        <Box mt={1}>
-                          <Chip label={getOverallRiskStatus().label} color={getOverallRiskStatus().color} sx={{ fontWeight: 700, px: 1 }} />
-                        </Box>
-                      </Card>
-                    </Grid>
-                  </Grid>
-
-                  {/* Human Review Audit Panel */}
-                  <Paper sx={{ p: 2.5, mb: 4, border: '1px solid #0f172a', bgcolor: '#f8fafc' }}>
-                    <Box display="flex" flexDirection={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ md: 'center' }} gap={2}>
-                      <Box>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <AuditIcon fontSize="small" /> Human Clinical Audit Sign-Off
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          Review AI extraction accuracy, edit text summaries inline, and sign off for clinical records.
-                        </Typography>
-                      </Box>
-
-                      {/* Action Buttons */}
-                      <Box display="flex" gap={2} alignItems="center" flexWrap="wrap">
-                        {isEditing ? (
-                          <>
-                            <Button variant="contained" size="small" color="primary" onClick={handleSaveEdit}>
-                              Save Edits
-                            </Button>
-                            <Button variant="outlined" size="small" onClick={handleCancelEdit}>
-                              Cancel
-                            </Button>
-                          </>
-                        ) : (
-                          <>
-                            <Button
-                              variant="outlined"
-                              size="small"
-                              startIcon={<CheckIcon />}
-                              onClick={handleApprove}
-                              sx={{ color: '#16a34a', borderColor: '#16a34a', '&:hover': { bgcolor: '#f0fdf4' } }}
-                            >
-                              Approve
-                            </Button>
-                            <Button variant="outlined" size="small" startIcon={<EditIcon />} onClick={handleStartEdit}>
-                              Edit Summaries
-                            </Button>
-                            <Button variant="outlined" size="small" color="error" startIcon={<RejectIcon />} onClick={handleReject}>
-                              Reject / Revise
-                            </Button>
-                          </>
-                        )}
-                      </Box>
-                    </Box>
-
-                    {/* Coach Notes Input */}
-                    <Box mt={2}>
-                      <TextField
-                        fullWidth
-                        size="small"
-                        placeholder="Add clinical coach notes or sign-off observations (optional)..."
-                        value={coachNotes}
-                        onChange={(e) => setCoachNotes(e.target.value)}
-                        sx={{ bgcolor: '#ffffff' }}
-                      />
-                    </Box>
-
-                    {result.human_review?.reviewedBy && (
-                      <Typography variant="caption" sx={{ display: 'block', mt: 1.5, color: '#1e293b', fontStyle: 'italic' }}>
-                        Audit Stamp: Reviewed by {result.human_review.reviewedBy} at {result.human_review.reviewedAt} ({result.human_review.status})
-                      </Typography>
-                    )}
-                  </Paper>
-
-                  {/* Dual Pane Layout (Side-by-Side Split View) OR Standard Tabs View */}
-                  <Grid container spacing={3}>
-                    
-                    {/* Left Split Pane: Raw Transcript text (Only when Dual Pane View is ON) */}
-                    {dualPaneView && (
-                      <Grid item xs={12} lg={5}>
-                        <Paper sx={{ p: 2.5, height: '100%', border: '1px solid #cbd5e1', bgcolor: '#ffffff', display: 'flex', flexDirection: 'column' }}>
-                          <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <AssignmentIcon fontSize="small" /> Raw Conversation Transcript
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary" sx={{ mb: 2 }}>
-                            Compare AI evidence quotes against the source transcript side-by-side.
-                          </Typography>
-                          <Box
-                            sx={{
-                              p: 2,
-                              bgcolor: '#f1f5f9',
-                              borderRadius: 1,
-                              border: '1px solid #e2e8f0',
-                              fontFamily: 'monospace',
-                              fontSize: '0.825rem',
-                              lineHeight: 1.6,
-                              whiteSpace: 'pre-wrap',
-                              overflowY: 'auto',
-                              maxHeight: 700,
-                              flexGrow: 1
-                            }}
-                          >
-                            {conversationText}
-                          </Box>
-                        </Paper>
-                      </Grid>
-                    )}
-
-                    {/* Right Split Pane: Categorized Intelligence Cards */}
-                    <Grid item xs={12} lg={dualPaneView ? 7 : 12}>
+                  return (
+                    <Box ref={resultRef}>
                       
+                      {/* Report Header Toolbar */}
+                      <Paper sx={{ p: 2.5, mb: 3, border: '1px solid #cbd5e1', bgcolor: '#ffffff' }}>
+                        <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'center' }} gap={2}>
+                          <Box>
+                            <Box display="flex" alignItems="center" gap={1.5} flexWrap="wrap">
+                              <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1.15rem' }}>
+                                Clinical Intelligence Report
+                              </Typography>
+                              <Chip label={clientMetadata.clientName} color="primary" size="small" />
+                              <Chip label={clientMetadata.clientId} variant="outlined" size="small" />
+                              <Chip label={clientMetadata.sessionDate} variant="outlined" size="small" />
+                            </Box>
+                            <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                              Generated via Gemini 2.5 | Audit Status: <strong>{result.human_review?.status || 'Pending'}</strong>
+                            </Typography>
+                          </Box>
+
+                          {/* Export Actions */}
+                          <Box display="flex" alignItems="center" gap={1.5} flexWrap="wrap">
+                            <Button variant="outlined" size="small" startIcon={<CopyIcon />} onClick={handleCopyToEhr}>
+                              Copy to EHR Notes
+                            </Button>
+                            <Button variant="outlined" size="small" startIcon={<DownloadIcon />} onClick={handleExportJson}>
+                              Export JSON
+                            </Button>
+                          </Box>
+                        </Box>
+                      </Paper>
+
+                      {/* Summary Triage Row */}
+                      <Grid container spacing={2} sx={{ mb: 3 }}>
+                        <Grid item xs={12} sm={4}>
+                          <Card sx={{ textAlign: 'center', p: 2 }}>
+                            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: 'uppercase' }}>
+                              Overall Health Status
+                            </Typography>
+                            <Box mt={1}>
+                              <Chip label={getOverallHealthStatus().label} color={getOverallHealthStatus().color} sx={{ fontWeight: 700, px: 1 }} />
+                            </Box>
+                          </Card>
+                        </Grid>
+                        <Grid item xs={12} sm={4}>
+                          <Card sx={{ textAlign: 'center', p: 2 }}>
+                            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: 'uppercase' }}>
+                              Client Engagement Level
+                            </Typography>
+                            <Box mt={1}>
+                              <Chip label={getOverallEngagementStatus().label} color={getOverallEngagementStatus().color} sx={{ fontWeight: 700, px: 1 }} />
+                            </Box>
+                          </Card>
+                        </Grid>
+                        <Grid item xs={12} sm={4}>
+                          <Card sx={{ textAlign: 'center', p: 2 }}>
+                            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: 'uppercase' }}>
+                              Risk Rating
+                            </Typography>
+                            <Box mt={1}>
+                              <Chip label={getOverallRiskStatus().label} color={getOverallRiskStatus().color} sx={{ fontWeight: 700, px: 1 }} />
+                            </Box>
+                          </Card>
+                        </Grid>
+                      </Grid>
+
+                      {/* Human Review Audit Panel */}
+                      <Paper sx={{ p: 2.5, mb: 3, border: '1px solid #0f172a', bgcolor: '#f8fafc' }}>
+                        <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'center' }} gap={2}>
+                          <Box>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <AuditIcon fontSize="small" /> Human Clinical Audit Sign-Off
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              Review AI extraction accuracy, edit text summaries inline, and sign off for clinical records.
+                            </Typography>
+                          </Box>
+
+                          {/* Action Buttons */}
+                          <Box display="flex" gap={1.5} alignItems="center" flexWrap="wrap">
+                            {isEditing ? (
+                              <>
+                                <Button variant="contained" size="small" color="primary" onClick={handleSaveEdit}>
+                                  Save Edits
+                                </Button>
+                                <Button variant="outlined" size="small" onClick={handleCancelEdit}>
+                                  Cancel
+                                </Button>
+                              </>
+                            ) : (
+                              <>
+                                <Button
+                                  variant="outlined"
+                                  size="small"
+                                  startIcon={<CheckIcon />}
+                                  onClick={handleApprove}
+                                  sx={{ color: '#16a34a', borderColor: '#16a34a', '&:hover': { bgcolor: '#f0fdf4' } }}
+                                >
+                                  Approve
+                                </Button>
+                                <Button variant="outlined" size="small" startIcon={<EditIcon />} onClick={handleStartEdit}>
+                                  Edit
+                                </Button>
+                                <Button variant="outlined" size="small" color="error" startIcon={<RejectIcon />} onClick={handleReject}>
+                                  Reject
+                                </Button>
+                              </>
+                            )}
+                          </Box>
+                        </Box>
+
+                        {/* Coach Notes Input */}
+                        <Box mt={2}>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            placeholder="Add clinical coach notes or sign-off observations (optional)..."
+                            value={coachNotes}
+                            onChange={(e) => setCoachNotes(e.target.value)}
+                            sx={{ bgcolor: '#ffffff' }}
+                          />
+                        </Box>
+
+                        {result.human_review?.reviewedBy && (
+                          <Typography variant="caption" sx={{ display: 'block', mt: 1.5, color: '#1e293b', fontStyle: 'italic' }}>
+                            Audit Stamp: Reviewed by {result.human_review.reviewedBy} at {result.human_review.reviewedAt} ({result.human_review.status})
+                          </Typography>
+                        )}
+                      </Paper>
+
                       {/* Workspace Navigation Tabs */}
                       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
                         <Tabs value={activeTab} onChange={(e, val) => setActiveTab(val)} indicatorColor="primary" textColor="primary">
@@ -1021,8 +982,7 @@ function App() {
 
                       {/* Tab 0: Executive & Risk */}
                       {(activeTab === 0 || activeTab === 3) && (
-                        <Grid container spacing={3} sx={{ mb: 3 }}>
-                          {/* Weekly Summary Card */}
+                        <Grid container spacing={2.5} sx={{ mb: 3 }}>
                           <Grid item xs={12}>
                             <Card sx={{ border: '1px solid #0f172a' }}>
                               <CardContent sx={{ p: 3 }}>
@@ -1065,7 +1025,7 @@ function App() {
                       )}
 
                       {/* Filtered Metric Cards based on Tab Selection */}
-                      <Grid container spacing={3}>
+                      <Grid container spacing={2.5}>
                         {cardConfigs
                           .filter(cfg => {
                             if (activeTab === 3) return true;
@@ -1079,7 +1039,7 @@ function App() {
                             const hasData = data.summary !== null && data.classification !== 'Missing Information';
 
                             return (
-                              <Grid item xs={12} md={dualPaneView ? 12 : 6} key={config.key}>
+                              <Grid item xs={12} sm={6} key={config.key}>
                                 <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                                   <CardContent sx={{ p: 2.5, display: 'flex', flexDirection: 'column', height: '100%' }}>
                                     
@@ -1129,7 +1089,7 @@ function App() {
                           })}
                       </Grid>
 
-                      {/* Supporting Evidence Accordion (Tab 2 or Tab 3) */}
+                      {/* Supporting Evidence Accordion */}
                       {(activeTab === 2 || activeTab === 3) && (
                         <Box mt={3}>
                           <Accordion sx={{ border: '1px solid #e2e8f0', boxShadow: 'none', borderRadius: '6px !important' }}>
@@ -1169,13 +1129,23 @@ function App() {
                         </Box>
                       )}
 
-                    </Grid>
-                  </Grid>
+                    </Box>
+                  );
+                })() : (
+                  /* Placeholder State when no report exists yet */
+                  <Card sx={{ border: '1px solid #cbd5e1', p: 6, textAlign: 'center', bgcolor: '#ffffff', minHeight: 450, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                    <ClinicalIcon sx={{ fontSize: 48, color: '#94a3b8', mb: 2 }} />
+                    <Typography variant="h6" sx={{ fontWeight: 700, mb: 1, color: '#0f172a' }}>
+                      No Intelligence Report Generated Yet
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 420 }}>
+                      Upload a <strong>.txt</strong> file or select a sample session on the left panel, then click <strong>Generate Intelligence</strong> to build the structured report.
+                    </Typography>
+                  </Card>
+                )}
+              </Grid>
 
-                </Box>
-              );
-            })()}
-
+            </Grid>
           </Container>
         </Box>
       </Box>
