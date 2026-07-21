@@ -1273,14 +1273,16 @@ function App() {
                             <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155', mb: 1.5 }}>
                               Coach Review Observations & Directives:
                             </Typography>
-                            <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} gap={2} alignItems={{ sm: 'center' }}>
+                            <Stack spacing={2.5} direction={{ xs: 'column', sm: 'row' }} alignItems={{ sm: 'flex-start' }} useFlexGap>
                               <TextField
                                 fullWidth
+                                multiline
+                                rows={2}
                                 size="small"
                                 placeholder="Add coach review observations or sign-off notes (optional)..."
                                 value={coachNotes}
                                 onChange={(e) => setCoachNotes(e.target.value)}
-                                sx={{ bgcolor: '#ffffff' }}
+                                sx={{ bgcolor: '#ffffff', mb: { xs: 2, sm: 0 } }}
                               />
                               <Button
                                 variant="contained"
@@ -1288,11 +1290,11 @@ function App() {
                                 size="medium"
                                 onClick={handleSubmitReview}
                                 startIcon={<AuditIcon />}
-                                sx={{ px: 3, py: 1, whiteSpace: 'nowrap', minWidth: 160 }}
+                                sx={{ px: 3, py: 1.2, whiteSpace: 'nowrap', minWidth: 160, mt: { xs: 1.5, sm: 0 } }}
                               >
                                 Submit Review
                               </Button>
-                            </Box>
+                            </Stack>
                           </Box>
 
                           {result.human_review?.reviewedBy && (
