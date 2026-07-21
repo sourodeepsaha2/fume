@@ -46,7 +46,8 @@ import {
   Dashboard as DashboardIcon,
   VerifiedUser as AuditIcon,
   LocalHospital as ClinicalIcon,
-  PictureAsPdf as PdfIcon
+  PictureAsPdf as PdfIcon,
+  Menu as MenuIcon
 } from '@mui/icons-material';
 
 // Sample client sessions for 1-click clinical testing
