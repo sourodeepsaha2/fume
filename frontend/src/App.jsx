@@ -1,8 +1,4 @@
 import React, { useState, useRef } from 'react';
-import mammoth from 'mammoth';
-import * as pdfjsLib from 'pdfjs-dist';
-import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
-import { jsPDF } from 'jspdf';
 import {
   ThemeProvider,
   createTheme,
@@ -33,15 +29,7 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  Tabs,
-  Tab,
   Paper,
-  MenuItem,
-  Select,
-  FormControl,
-  InputLabel,
-  Switch,
-  FormControlLabel,
   Badge,
   Stack
 } from '@mui/material';
@@ -55,16 +43,9 @@ import {
   Cancel as RejectIcon,
   Edit as EditIcon,
   ContentCopy as CopyIcon,
-  Download as DownloadIcon,
   Dashboard as DashboardIcon,
-  Assignment as AssignmentIcon,
-  People as PeopleIcon,
-  Analytics as AnalyticsIcon,
-  Menu as MenuIcon,
   VerifiedUser as AuditIcon,
   LocalHospital as ClinicalIcon,
-  ViewSidebar as SplitViewIcon,
-  FormatListBulleted as ListIcon,
   PictureAsPdf as PdfIcon
 } from '@mui/icons-material';
 
@@ -266,25 +247,74 @@ function App() {
     triggerSnackbar(`Loaded transcript for ${sample.clientName}. Report remains visible.`, 'info');
   };
 
-  const handleFileUpload = (e) => {
+  const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    if (file.type !== 'text/plain' && !file.name.endsWith('.txt')) {
-      setError('Please upload a plain text (.txt) transcript file.');
-      triggerSnackbar('Invalid file format. Please upload a .txt file.', 'error');
-      return;
-    }
-
+    const fileExt = file.name.split('.').pop().toLowerCase();
     setFileName(file.name);
     setError('');
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setConversationText(event.target.result);
-      triggerSnackbar(`Loaded file "${file.name}".`, 'success');
-    };
-    reader.readAsText(file);
+    try {
+      if (fileExt === 'txt') {
+        const text = await file.text();
+        if (!text.trim()) {
+          setError('The uploaded text file is empty.');
+          triggerSnackbar('Uploaded file contains no text.', 'warning');
+          return;
+        }
+        setConversationText(text);
+        triggerSnackbar(`Loaded plain text file "${file.name}".`, 'success');
+      } else if (fileExt === 'docx') {
+        triggerSnackbar('Parsing Word document...', 'info');
+        const mammoth = await import('mammoth');
+        const arrayBuffer = await file.arrayBuffer();
+        const result = await mammoth.extractRawText({ arrayBuffer });
+        const extractedText = result.value ? result.value.trim() : '';
+
+        if (!extractedText) {
+          setError('No readable text found inside this Word (.docx) document.');
+          triggerSnackbar('No text extracted from Word document.', 'error');
+          return;
+        }
+        setConversationText(extractedText);
+        triggerSnackbar(`Successfully extracted text from "${file.name}".`, 'success');
+      } else if (fileExt === 'pdf') {
+        triggerSnackbar('Parsing PDF document...', 'info');
+        const pdfjsLib = await import('pdfjs-dist');
+        const pdfjsWorker = (await import('pdfjs-dist/build/pdf.worker.min.mjs?url')).default;
+        pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+
+        const arrayBuffer = await file.arrayBuffer();
+        const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+        const pdf = await loadingTask.promise;
+
+        let fullText = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const textContent = await page.getTextContent();
+          const pageText = textContent.items.map((item) => item.str).join(' ');
+          fullText += pageText + '\n';
+        }
+
+        const extractedText = fullText.trim();
+        if (!extractedText) {
+          setError('No readable text could be extracted from this PDF document.');
+          triggerSnackbar('No readable text found in PDF file.', 'error');
+          return;
+        }
+
+        setConversationText(extractedText);
+        triggerSnackbar(`Successfully extracted text from PDF "${file.name}".`, 'success');
+      } else {
+        setError('Unsupported file type. Please upload a .txt, .docx, or .pdf file.');
+        triggerSnackbar('Unsupported file format.', 'error');
+      }
+    } catch (err) {
+      console.error(err);
+      setError(`Failed to extract text from "${file.name}". Ensure the file is not corrupted.`);
+      triggerSnackbar('Document parsing error.', 'error');
+    }
   };
 
   // Clean WhatsApp exported chat timestamps & system headers
@@ -512,13 +542,15 @@ function App() {
   };
 
   // Export Clinical Summary Report as structured text PDF
-  const handleExportPdf = () => {
+  const handleExportPdf = async () => {
     if (!result) {
       triggerSnackbar('No generated report to export.', 'warning');
       return;
     }
 
     try {
+      triggerSnackbar('Generating PDF report...', 'info');
+      const { jsPDF } = await import('jspdf');
       const doc = new jsPDF({ unit: 'pt', format: 'letter' });
       const pageWidth = doc.internal.pageSize.getWidth();
       let y = 40;
