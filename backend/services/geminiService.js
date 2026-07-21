@@ -115,6 +115,12 @@ Your JSON output must follow this exact structure (do not add or change top-leve
     "confidence": "High | Medium | Low | null",
     "evidence": "Exact quote, or null"
   },
+  "detected_patterns": {
+    "summary": "Summarize recurring behaviors and behavioral trends across the entire conversation rather than isolated events (e.g., Recurring low sleep, Recurring bloating, Improving hydration, Increasing activity, Frequent work stress, Inconsistent protein intake), or null",
+    "classification": "Confirmed Fact | Client Reported | AI Inference | Missing Information",
+    "confidence": "High | Medium | Low | null",
+    "evidence": "Exact quote, or null"
+  },
   "key_barriers": {
     "summary": "Key barriers to goals, or null",
     "classification": "Confirmed Fact | Client Reported | AI Inference | Missing Information",

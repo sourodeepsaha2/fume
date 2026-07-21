@@ -1024,51 +1024,67 @@ function App() {
                         </CardContent>
                       </Card>
 
-                      {/* CARD 5: Key Barriers */}
+                      {/* CARD 5: Detected Patterns */}
+                      <Card sx={{ mb: 3, border: '1px solid #2563eb', bgcolor: '#f8fafc' }}>
+                        <CardContent sx={{ p: 3 }}>
+                          <Box display="flex" justifyContent="space-between" alignItems="center" mb={1.5}>
+                            <Typography variant="h6" sx={{ fontSize: '1.05rem', fontWeight: 700, color: '#1e40af', display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <AnalyticsIcon fontSize="small" /> 5. Detected Patterns
+                            </Typography>
+                            <Chip label="Behavioral Trends" color="secondary" size="small" />
+                          </Box>
+                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
+                            Summarizes recurring behaviors and longitudinal trends across the entire conversation.
+                          </Typography>
+                          {renderCardContent('detected_patterns', 'Recurring Behaviors & Trends', 'Recurring low sleep, frequent work stress, inconsistent protein intake, and recurring acidity/bloating observed across updates.')}
+                        </CardContent>
+                      </Card>
+
+                      {/* CARD 6: Key Barriers */}
                       <Card sx={{ mb: 3, border: '1px solid #cbd5e1' }}>
                         <CardContent sx={{ p: 3 }}>
                           <Typography variant="h6" sx={{ fontSize: '1.05rem', fontWeight: 700, mb: 2, color: '#0f172a' }}>
-                            5. Key Barriers
+                            6. Key Barriers
                           </Typography>
                           {renderCardContent('key_barriers', 'Primary Obstacles & Challenges', 'No key barriers reported.')}
                         </CardContent>
                       </Card>
 
-                      {/* CARD 6: Risk Flags */}
+                      {/* CARD 7: Risk Flags */}
                       <Card sx={{ mb: 3, border: '1px solid #dc2626' }}>
                         <CardContent sx={{ p: 3 }}>
                           <Typography variant="h6" sx={{ fontSize: '1.05rem', fontWeight: 700, mb: 2, color: '#dc2626' }}>
-                            6. Risk Flags
+                            7. Risk Flags
                           </Typography>
                           {renderCardContent('risk_flags', 'Warning Flags & Risk Factors', 'No critical risk flags detected in session.')}
                         </CardContent>
                       </Card>
 
-                      {/* CARD 7: Coach Recommendations */}
+                      {/* CARD 8: Coach Recommendations */}
                       <Card sx={{ mb: 3, border: '1px solid #cbd5e1' }}>
                         <CardContent sx={{ p: 3 }}>
                           <Typography variant="h6" sx={{ fontSize: '1.05rem', fontWeight: 700, mb: 2, color: '#0f172a' }}>
-                            7. Coach Recommendations
+                            8. Coach Recommendations
                           </Typography>
                           {renderCardContent('coach_recommendation', 'Actionable Coach Directives', 'No specific coach recommendations logged.')}
                         </CardContent>
                       </Card>
 
-                      {/* CARD 8: Pending Follow-ups */}
+                      {/* CARD 9: Pending Follow-ups */}
                       <Card sx={{ mb: 3, border: '1px solid #cbd5e1' }}>
                         <CardContent sx={{ p: 3 }}>
                           <Typography variant="h6" sx={{ fontSize: '1.05rem', fontWeight: 700, mb: 2, color: '#0f172a' }}>
-                            8. Pending Follow-ups
+                            9. Pending Follow-ups
                           </Typography>
                           {renderCardContent('pending_followups', 'Action Items & Commits', getSectionData('pending_actions').summary || 'No pending follow-ups.')}
                         </CardContent>
                       </Card>
 
-                      {/* CARD 9: Supporting Evidence */}
+                      {/* CARD 10: Supporting Evidence */}
                       <Card sx={{ mb: 3, border: '1px solid #cbd5e1' }}>
                         <CardContent sx={{ p: 3 }}>
                           <Typography variant="h6" sx={{ fontSize: '1.05rem', fontWeight: 700, mb: 2, color: '#0f172a' }}>
-                            9. Supporting Evidence
+                            10. Supporting Evidence
                           </Typography>
                           {renderCardContent('supporting_evidence', 'Exact Transcript Quotes & Verifications', 'No transcript evidence quotes extracted.')}
                         </CardContent>
