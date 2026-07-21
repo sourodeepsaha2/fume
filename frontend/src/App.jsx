@@ -130,34 +130,28 @@ Coach: Outstanding adherence Elena. Keep up the daily rehab exercises and mainta
   }
 ];
 
-// Configure a clean, high-density clinical internal dashboard theme
+// Custom slate theme palette for healthcare internal dashboard
 const theme = createTheme({
   palette: {
-    mode: 'light',
     primary: {
       main: '#0f172a', // Slate 900
-      light: '#334155',
+      light: '#1e293b',
       dark: '#020617',
     },
     secondary: {
-      main: '#2563eb', // Blue 600
+      main: '#2563eb', // Royal Blue
     },
     background: {
-      default: '#f8fafc', // Slate 50
+      default: '#f8fafc',
       paper: '#ffffff',
     },
     text: {
       primary: '#0f172a',
-      secondary: '#64748b',
+      secondary: '#475569',
     },
-    divider: '#e2e8f0',
   },
   typography: {
-    fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-    h5: {
-      fontWeight: 700,
-      letterSpacing: '-0.02em',
-    },
+    fontFamily: '"Inter", "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif',
     h6: {
       fontWeight: 600,
       letterSpacing: '-0.01em',
