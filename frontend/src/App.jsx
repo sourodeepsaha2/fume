@@ -284,6 +284,26 @@ function App() {
     reader.readAsText(file);
   };
 
+  // Clean WhatsApp exported chat timestamps & system headers
+  const handleCleanWhatsappChat = () => {
+    if (!conversationText || !conversationText.trim()) {
+      triggerSnackbar('Please paste a WhatsApp conversation transcript first.', 'warning');
+      return;
+    }
+
+    // Strips WhatsApp export patterns:
+    // e.g. [7/12/26, 9:30:15 AM] Speaker Name:
+    // e.g. 12/07/2026, 09:30 - Speaker Name:
+    const cleaned = conversationText
+      .replace(/\[?\d{1,2}\/\d{1,2}\/\d{2,4},?\s+\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM|am|pm)?\]?\s*[-:]?\s*/g, '')
+      .replace(/^\d{1,2}\/\d{1,2}\/\d{2,4},\s+\d{1,2}:\d{2}\s*-\s*/gm, '')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+
+    setConversationText(cleaned);
+    triggerSnackbar('Cleaned WhatsApp timestamps and metadata from transcript.', 'success');
+  };
+
   // Clear Conversation text without deleting generated report
   const handleClearConversation = () => {
     setConversationText('');
@@ -754,6 +774,9 @@ function App() {
                               Upload File (.txt, .docx, .pdf)
                             </Button>
                           </label>
+                          <Button variant="outlined" color="primary" size="medium" onClick={handleCleanWhatsappChat}>
+                            Clean WhatsApp Formatting
+                          </Button>
                           <Button variant="outlined" color="inherit" size="medium" startIcon={<ResetIcon />} onClick={handleClearConversation}>
                             Clear Conversation
                           </Button>
