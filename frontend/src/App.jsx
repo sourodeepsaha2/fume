@@ -41,7 +41,8 @@ import {
   InputLabel,
   Switch,
   FormControlLabel,
-  Badge
+  Badge,
+  Stack
 } from '@mui/material';
 import {
   CloudUpload as CloudUploadIcon,
@@ -759,8 +760,8 @@ function App() {
                     <Box display="flex" flexDirection="column" gap={2}>
                       
                       {/* Upload & Clear Row */}
-                      <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1.5}>
-                        <Box display="flex" alignItems="center" gap={1.5} flexWrap="wrap">
+                      <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2}>
+                        <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap>
                           <input
                             type="file"
                             accept=".txt,.docx,.pdf,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
@@ -769,7 +770,7 @@ function App() {
                             ref={fileInputRef}
                             onChange={handleFileUpload}
                           />
-                          <label htmlFor="left-panel-upload-file" style={{ marginRight: '8px', display: 'inline-block' }}>
+                          <label htmlFor="left-panel-upload-file" style={{ display: 'inline-block' }}>
                             <Button variant="outlined" component="span" startIcon={<CloudUploadIcon />} size="medium">
                               Upload File (.txt, .docx, .pdf)
                             </Button>
@@ -780,7 +781,7 @@ function App() {
                           <Button variant="outlined" color="inherit" size="medium" startIcon={<ResetIcon />} onClick={handleClearConversation}>
                             Clear Conversation
                           </Button>
-                        </Box>
+                        </Stack>
 
                         <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
                           {conversationText ? `${conversationText.length} chars | ${conversationText.split(/\s+/).filter(Boolean).length} words` : 'Empty transcript'}
@@ -924,28 +925,28 @@ function App() {
                       <Paper sx={{ p: 2.5, mb: 3, border: '1px solid #cbd5e1', bgcolor: '#ffffff' }}>
                         <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'center' }} gap={2}>
                           <Box>
-                            <Box display="flex" alignItems="center" gap={1.5} flexWrap="wrap">
+                            <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
                               <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1.15rem' }}>
                                 Client Intelligence Report
                               </Typography>
                               <Chip label={clientMetadata.clientName} color="primary" size="small" />
                               <Chip label={clientMetadata.clientId} variant="outlined" size="small" />
                               <Chip label={clientMetadata.sessionDate} variant="outlined" size="small" />
-                            </Box>
+                            </Stack>
                             <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
                               Generated via Gemini 2.5 | Audit Status: <strong>{result.human_review?.status || 'Pending'}</strong>
                             </Typography>
                           </Box>
 
                           {/* Export Actions */}
-                          <Box display="flex" alignItems="center" gap={1.5} flexWrap="wrap">
+                          <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap>
                             <Button variant="outlined" size="small" startIcon={<CopyIcon />} onClick={handleCopyToEhr}>
                               Copy to EHR Notes
                             </Button>
                             <Button variant="outlined" size="small" startIcon={<DownloadIcon />} onClick={handleExportJson}>
                               Export JSON
                             </Button>
-                          </Box>
+                          </Stack>
                         </Box>
                       </Paper>
 
@@ -1215,7 +1216,7 @@ function App() {
                             </Box>
 
                             {/* Control Buttons */}
-                            <Box display="flex" gap={1.5} alignItems="center" flexWrap="wrap">
+                            <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap>
                               {isEditing ? (
                                 <>
                                   <Button variant="contained" size="medium" color="primary" onClick={handleSaveEdit}>
@@ -1244,7 +1245,7 @@ function App() {
                                   </Button>
                                 </>
                               )}
-                            </Box>
+                            </Stack>
                           </Box>
 
                           {/* Optional Coach Notes Textarea */}
