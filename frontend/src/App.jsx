@@ -628,8 +628,14 @@ function App() {
                 </Typography>
               </Box>
 
-              <Box display="flex" alignItems="center" gap={2} sx={{ rowGap: 1.5, columnGap: 2.5, flexWrap: 'wrap' }}>
-                <Chip icon={<AuditIcon fontSize="small" />} label={`Audit Queue: ${auditHistory.length} Reviewed`} variant="outlined" size="small" sx={{ display: { xs: 'none', sm: 'inline-flex' } }} />
+              <Box display="flex" alignItems="center" sx={{ gap: 2.5, flexWrap: 'wrap' }}>
+                <Chip
+                  icon={<AuditIcon fontSize="small" />}
+                  label={`Audit Queue: ${auditHistory.length} Reviewed`}
+                  variant="outlined"
+                  size="small"
+                  sx={{ display: { xs: 'none', sm: 'inline-flex' }, mr: 2 }}
+                />
                 <Button variant="outlined" size="small" onClick={handleClear} startIcon={<ResetIcon fontSize="small" />}>
                   Reset Session
                 </Button>
