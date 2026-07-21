@@ -22,7 +22,7 @@ app.get('/health', (req, res) => {
 
 // Analyze endpoint
 app.post('/analyze', async (req, res) => {
-  const { conversation } = req.body;
+  const { conversation, metadata } = req.body;
 
   if (!conversation || typeof conversation !== 'string' || conversation.trim() === '') {
     return res.status(400).json({
@@ -33,7 +33,7 @@ app.post('/analyze', async (req, res) => {
   console.log(`Received conversation for analysis (Length: ${conversation.length} chars)`);
 
   try {
-    const result = await analyzeConversation(conversation);
+    const result = await analyzeConversation(conversation, metadata);
     res.json(result);
   } catch (error) {
     console.error('Failed to analyze conversation:', error);

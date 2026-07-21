@@ -5,9 +5,10 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
  * and returns structured client wellness intelligence.
  * 
  * @param {string} conversation - The transcript text to analyze.
+ * @param {object} [metadata] - Optional session metadata (client_name, client_id, session_type, session_date).
  * @returns {Promise<object>} The analyzed JSON client intelligence object.
  */
-export async function analyzeConversation(conversation) {
+export async function analyzeConversation(conversation, metadata = null) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey || apiKey.trim() === '') {
     throw new Error('Gemini API key is not defined. Please obtain a free developer key from Google AI Studio and configure GEMINI_API_KEY in your backend/.env file.');
@@ -148,10 +149,14 @@ Your JSON output must follow this exact structure (do not add or change top-leve
     // Parse the JSON string to return it as a structured object
     const parsedData = JSON.parse(content.trim());
 
-    // Append default human review status
+    // Append default human review status & session metadata
     parsedData.human_review = {
       status: 'Pending'
     };
+
+    if (metadata) {
+      parsedData.session_metadata = metadata;
+    }
 
     return parsedData;
   } catch (error) {
