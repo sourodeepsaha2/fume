@@ -932,6 +932,95 @@ function App() {
                         </Box>
                       </Paper>
 
+                      {/* DASHBOARD SUMMARY CARDS ROW */}
+                      {(() => {
+                        const dash = result.dashboard_summary || {};
+                        
+                        // Overall Progress
+                        const progressVal = dash.overall_progress || (result.progress_analysis?.summary ? 'On Track' : 'Improving');
+                        const getProgressColor = (val) => {
+                          const v = (val || '').toLowerCase();
+                          if (v.includes('improv') || v.includes('track') || v.includes('good')) return 'success';
+                          if (v.includes('stagnant') || v.includes('moderate')) return 'warning';
+                          if (v.includes('need') || v.includes('declin') || v.includes('poor')) return 'error';
+                          return 'info';
+                        };
+
+                        // Overall Risk
+                        const riskVal = dash.overall_risk || (
+                          result.risk_flags && result.risk_flags.summary && result.risk_flags.classification !== 'Missing Information'
+                            ? 'High Risk'
+                            : (result.symptoms?.summary && result.symptoms?.classification !== 'Missing Information' ? 'Medium Risk' : 'Low Risk')
+                        );
+                        const getRiskColor = (val) => {
+                          const v = (val || '').toLowerCase();
+                          if (v.includes('high')) return 'error';
+                          if (v.includes('medium') || v.includes('moderate')) return 'warning';
+                          return 'success';
+                        };
+
+                        // Engagement
+                        const engVal = dash.engagement || (
+                          result.engagement_level?.summary ? result.engagement_level.summary : 'High Adherence'
+                        );
+                        const getEngColor = (val) => {
+                          const v = (val || '').toLowerCase();
+                          if (v.includes('high') || v.includes('active') || v.includes('good')) return 'success';
+                          if (v.includes('low') || v.includes('poor')) return 'error';
+                          return 'info';
+                        };
+
+                        // Data Completeness
+                        const totalKeys = ['nutrition', 'exercise', 'steps', 'sleep', 'water', 'symptoms', 'stress', 'energy', 'progress_analysis', 'detected_patterns', 'key_barriers', 'risk_flags', 'coach_recommendation', 'pending_followups'];
+                        const presentCount = totalKeys.filter(k => result[k] && result[k].summary && result[k].classification !== 'Missing Information').length;
+                        const completenessVal = dash.data_completeness || `${Math.round((presentCount / totalKeys.length) * 100)}% (${presentCount}/${totalKeys.length} metrics)`;
+                        const getCompletenessColor = () => presentCount >= 10 ? 'success' : presentCount >= 5 ? 'info' : 'warning';
+
+                        return (
+                          <Grid container spacing={2} sx={{ mb: 3 }}>
+                            {/* 1. Overall Progress */}
+                            <Grid item xs={6} sm={3}>
+                              <Card sx={{ border: '1px solid #cbd5e1', bgcolor: '#ffffff', p: 2, textAlign: 'center', height: '100%' }}>
+                                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '0.05em', display: 'block', mb: 1 }}>
+                                  Overall Progress
+                                </Typography>
+                                <Chip label={progressVal} color={getProgressColor(progressVal)} sx={{ fontWeight: 700, px: 0.5 }} size="small" />
+                              </Card>
+                            </Grid>
+
+                            {/* 2. Overall Risk */}
+                            <Grid item xs={6} sm={3}>
+                              <Card sx={{ border: '1px solid #cbd5e1', bgcolor: '#ffffff', p: 2, textAlign: 'center', height: '100%' }}>
+                                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '0.05em', display: 'block', mb: 1 }}>
+                                  Overall Risk
+                                </Typography>
+                                <Chip label={riskVal} color={getRiskColor(riskVal)} sx={{ fontWeight: 700, px: 0.5 }} size="small" />
+                              </Card>
+                            </Grid>
+
+                            {/* 3. Engagement */}
+                            <Grid item xs={6} sm={3}>
+                              <Card sx={{ border: '1px solid #cbd5e1', bgcolor: '#ffffff', p: 2, textAlign: 'center', height: '100%' }}>
+                                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '0.05em', display: 'block', mb: 1 }}>
+                                  Engagement
+                                </Typography>
+                                <Chip label={engVal} color={getEngColor(engVal)} sx={{ fontWeight: 700, px: 0.5 }} size="small" />
+                              </Card>
+                            </Grid>
+
+                            {/* 4. Data Completeness */}
+                            <Grid item xs={6} sm={3}>
+                              <Card sx={{ border: '1px solid #cbd5e1', bgcolor: '#ffffff', p: 2, textAlign: 'center', height: '100%' }}>
+                                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '0.05em', display: 'block', mb: 1 }}>
+                                  Data Completeness
+                                </Typography>
+                                <Chip label={completenessVal} color={getCompletenessColor()} sx={{ fontWeight: 700, px: 0.5 }} size="small" variant="outlined" />
+                              </Card>
+                            </Grid>
+                          </Grid>
+                        );
+                      })()}
+
                       {/* 10 STRUCTURED CLIENT INTELLIGENCE REPORT CARDS */}
                       
                       {/* CARD 1: Weekly Summary */}

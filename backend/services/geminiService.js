@@ -47,6 +47,12 @@ Strict Guidelines:
 
 JSON Schema:
 {
+  "dashboard_summary": {
+    "overall_progress": "Improving | On Track | Stagnant | Needs Attention",
+    "overall_risk": "Low Risk | Medium Risk | High Risk",
+    "engagement": "High Adherence | Moderate | Low Engagement",
+    "data_completeness": "High (12/14 metrics) | Partial (8/14 metrics) | Low (4/14 metrics)"
+  },
   "weekly_summary": {
     "summary": "Concise executive weekly summary, or null",
     "classification": "Confirmed Fact | Client Reported | AI Inference | Missing Information",
