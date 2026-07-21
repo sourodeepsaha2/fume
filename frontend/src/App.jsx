@@ -1,4 +1,7 @@
 import React, { useState, useRef } from 'react';
+import mammoth from 'mammoth';
+import * as pdfjsLib from 'pdfjs-dist';
+import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import {
   ThemeProvider,
   createTheme,
@@ -716,6 +719,16 @@ function App() {
                       </Alert>
                     )}
 
+                    {/* Extracted Text Preview Banner */}
+                    {fileName && conversationText && (
+                      <Box display="flex" alignItems="center" justifyContent="space-between" bgcolor="#eff6ff" border="1px solid #bfdbfe" p={1.5} borderRadius={1} mb={2}>
+                        <Typography variant="caption" sx={{ color: '#1e40af', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <AuditIcon fontSize="small" /> Extracted text from "{fileName}" — Edit text preview below before analysis.
+                        </Typography>
+                        <Chip label={`${conversationText.length} chars`} size="small" color="primary" />
+                      </Box>
+                    )}
+
                     {/* Large Conversation Textarea */}
                     <TextField
                       fullWidth
@@ -736,7 +749,7 @@ function App() {
                         <Box display="flex" alignItems="center" gap={1.5} flexWrap="wrap">
                           <input
                             type="file"
-                            accept=".txt"
+                            accept=".txt,.docx,.pdf,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
                             style={{ display: 'none' }}
                             id="left-panel-upload-file"
                             ref={fileInputRef}
@@ -744,7 +757,7 @@ function App() {
                           />
                           <label htmlFor="left-panel-upload-file" style={{ marginRight: '8px', display: 'inline-block' }}>
                             <Button variant="outlined" component="span" startIcon={<CloudUploadIcon />} size="medium">
-                              Upload .txt
+                              Upload File (.txt, .docx, .pdf)
                             </Button>
                           </label>
                           <Button variant="outlined" color="inherit" size="medium" startIcon={<ResetIcon />} onClick={handleClearConversation}>
