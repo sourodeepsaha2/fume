@@ -429,6 +429,26 @@ function App() {
     triggerSnackbar('Session report marked as REJECTED / NEEDS REVISION.', 'warning');
   };
 
+  const handleSubmitReview = () => {
+    if (!result) return;
+    const timestamp = new Date().toLocaleTimeString();
+    const currentStatus = result.human_review?.status || 'Approved';
+    setResult(prev => ({
+      ...prev,
+      human_review: {
+        status: currentStatus,
+        reviewedBy: 'Coach Sarah Jenkins, RD',
+        reviewedAt: timestamp,
+        notes: coachNotes
+      }
+    }));
+    setAuditHistory(prev => [
+      { action: `Submitted Review (${currentStatus})`, client: clientMetadata.clientName, time: timestamp, notes: coachNotes },
+      ...prev
+    ]);
+    triggerSnackbar(`Clinical coach review submitted successfully. Status: ${currentStatus}`, 'success');
+  };
+
   const handleStartEdit = () => {
     const initialSummaries = {};
     Object.keys(result).forEach(key => {
@@ -1248,16 +1268,31 @@ function App() {
                             </Stack>
                           </Box>
 
-                          {/* Optional Coach Notes Textarea */}
-                          <Box mt={2.5}>
-                            <TextField
-                              fullWidth
-                              size="small"
-                              placeholder="Add coach review observations or sign-off notes (optional)..."
-                              value={coachNotes}
-                              onChange={(e) => setCoachNotes(e.target.value)}
-                              sx={{ bgcolor: '#ffffff' }}
-                            />
+                          {/* Coach Review Textarea & Submit Review Row */}
+                          <Box sx={{ mt: 3.5, pt: 2.5, borderTop: '1px solid #cbd5e1' }}>
+                            <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155', mb: 1.5 }}>
+                              Coach Review Observations & Directives:
+                            </Typography>
+                            <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} gap={2} alignItems={{ sm: 'center' }}>
+                              <TextField
+                                fullWidth
+                                size="small"
+                                placeholder="Add coach review observations or sign-off notes (optional)..."
+                                value={coachNotes}
+                                onChange={(e) => setCoachNotes(e.target.value)}
+                                sx={{ bgcolor: '#ffffff' }}
+                              />
+                              <Button
+                                variant="contained"
+                                color="primary"
+                                size="medium"
+                                onClick={handleSubmitReview}
+                                startIcon={<AuditIcon />}
+                                sx={{ px: 3, py: 1, whiteSpace: 'nowrap', minWidth: 160 }}
+                              >
+                                Submit Review
+                              </Button>
+                            </Box>
                           </Box>
 
                           {result.human_review?.reviewedBy && (
