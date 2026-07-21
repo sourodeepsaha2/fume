@@ -795,6 +795,20 @@ function App() {
                     return result[key] || { summary: null, classification: 'Missing Information', confidence: null, evidence: null };
                   };
 
+                  const getBadgeSx = (classification) => {
+                    switch (classification) {
+                      case 'Confirmed Fact':
+                        return { bgcolor: '#dcfce7', color: '#15803d', borderColor: '#bbf7d0', fontWeight: 700 };
+                      case 'Client Reported':
+                        return { bgcolor: '#dbeafe', color: '#1e40af', borderColor: '#bfdbfe', fontWeight: 700 };
+                      case 'AI Inference':
+                        return { bgcolor: '#fef3c7', color: '#b45309', borderColor: '#fde68a', fontWeight: 700 };
+                      case 'Missing Information':
+                      default:
+                        return { bgcolor: '#f1f5f9', color: '#64748b', borderColor: '#e2e8f0', fontWeight: 600 };
+                    }
+                  };
+
                   const renderCardContent = (key, title, placeholderMsg) => {
                     const data = getSectionData(key);
                     const hasData = data.summary !== null && data.classification !== 'Missing Information';
@@ -802,17 +816,20 @@ function App() {
 
                     return (
                       <Box>
-                        {/* Title & Badge Row */}
-                        <Box display="flex" justifyContent="space-between" alignItems="center" gap={1.5} mb={1.5} flexWrap="wrap">
+                        {/* Title & Classification Badge Inline Row */}
+                        <Box display="flex" alignItems="center" gap={1.5} mb={1.5} flexWrap="wrap">
                           <Typography variant="h6" sx={{ fontSize: '0.95rem', fontWeight: 700, color: '#0f172a' }}>
                             {title}
                           </Typography>
-                          <Box display="flex" gap={1} alignItems="center">
-                            <Chip label={data.classification || 'Missing Information'} size="small" color={getBadgeColor(data.classification)} />
-                            {data.confidence && (
-                              <Chip label={`Confidence: ${data.confidence}`} size="small" variant="outlined" />
-                            )}
-                          </Box>
+                          <Chip
+                            label={data.classification || 'Missing Information'}
+                            size="small"
+                            variant="outlined"
+                            sx={getBadgeSx(data.classification)}
+                          />
+                          {data.confidence && (
+                            <Chip label={`Confidence: ${data.confidence}`} size="small" variant="outlined" sx={{ fontWeight: 600 }} />
+                          )}
                         </Box>
 
                         {/* Summary Block */}
