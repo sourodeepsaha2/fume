@@ -1148,6 +1148,56 @@ function App() {
                         </CardContent>
                       </Card>
 
+                      {/* DEVELOPER PANEL: RAW STRUCTURED JSON VIEWER */}
+                      <Card sx={{ mt: 3, mb: 4, border: '1px solid #1e293b', bgcolor: '#0f172a' }}>
+                        <Accordion defaultExpanded={false} sx={{ bgcolor: 'transparent', color: '#f8fafc', boxShadow: 'none', '&:before': { display: 'none' } }}>
+                          <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: '#94a3b8' }} />} sx={{ px: 3, py: 1 }}>
+                            <Box display="flex" justifyContent="space-between" alignItems="center" width="100%" sx={{ pr: 2 }}>
+                              <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#38bdf8', display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <AnalyticsIcon fontSize="small" /> Developer Panel — Raw Structured AI JSON
+                              </Typography>
+                              <Chip label="Raw JSON Debug Output" size="small" sx={{ bgcolor: '#1e293b', color: '#cbd5e1', fontSize: '0.7rem' }} />
+                            </Box>
+                          </AccordionSummary>
+                          <AccordionDetails sx={{ px: 3, pb: 3, pt: 0, borderTop: '1px solid #1e293b' }}>
+                            <Box display="flex" justifyContent="space-between" alignItems="center" mb={1.5} pt={2}>
+                              <Typography variant="caption" sx={{ color: '#94a3b8' }}>
+                                Inspect the exact JSON response returned by the Gemini AI API to verify field mapping against the UI.
+                              </Typography>
+                              <Button
+                                size="small"
+                                startIcon={<CopyIcon fontSize="small" />}
+                                onClick={() => {
+                                  navigator.clipboard.writeText(JSON.stringify(result, null, 2));
+                                  triggerSnackbar('Raw JSON copied to clipboard!', 'info');
+                                }}
+                                sx={{ color: '#38bdf8', borderColor: '#334155', '&:hover': { bgcolor: '#1e293b' } }}
+                              >
+                                Copy JSON
+                              </Button>
+                            </Box>
+                            <Box
+                              component="pre"
+                              sx={{
+                                p: 2.5,
+                                bgcolor: '#020617',
+                                color: '#38bdf8',
+                                borderRadius: 1.5,
+                                border: '1px solid #1e293b',
+                                fontSize: '0.825rem',
+                                fontFamily: 'monospace',
+                                lineHeight: 1.5,
+                                overflowX: 'auto',
+                                maxHeight: 500,
+                                margin: 0
+                              }}
+                            >
+                              {JSON.stringify(result, null, 2)}
+                            </Box>
+                          </AccordionDetails>
+                        </Accordion>
+                      </Card>
+
                     </Box>
                   );
                 })() : (
