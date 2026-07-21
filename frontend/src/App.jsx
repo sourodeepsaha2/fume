@@ -919,71 +919,7 @@ function App() {
                         </Box>
                       </Paper>
 
-                      {/* Human Review Audit Panel */}
-                      <Paper sx={{ p: 2.5, mb: 3, border: '1px solid #0f172a', bgcolor: '#f8fafc' }}>
-                        <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'center' }} gap={2}>
-                          <Box>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <AuditIcon fontSize="small" /> Human Clinical Audit Sign-Off
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              Review AI extraction accuracy, edit text summaries inline, and sign off for clinical records.
-                            </Typography>
-                          </Box>
-
-                          {/* Action Buttons */}
-                          <Box display="flex" gap={1.5} alignItems="center" flexWrap="wrap">
-                            {isEditing ? (
-                              <>
-                                <Button variant="contained" size="small" color="primary" onClick={handleSaveEdit}>
-                                  Save Edits
-                                </Button>
-                                <Button variant="outlined" size="small" onClick={handleCancelEdit}>
-                                  Cancel
-                                </Button>
-                              </>
-                            ) : (
-                              <>
-                                <Button
-                                  variant="outlined"
-                                  size="small"
-                                  startIcon={<CheckIcon />}
-                                  onClick={handleApprove}
-                                  sx={{ color: '#16a34a', borderColor: '#16a34a', '&:hover': { bgcolor: '#f0fdf4' } }}
-                                >
-                                  Approve
-                                </Button>
-                                <Button variant="outlined" size="small" startIcon={<EditIcon />} onClick={handleStartEdit}>
-                                  Edit
-                                </Button>
-                                <Button variant="outlined" size="small" color="error" startIcon={<RejectIcon />} onClick={handleReject}>
-                                  Reject
-                                </Button>
-                              </>
-                            )}
-                          </Box>
-                        </Box>
-
-                        {/* Coach Notes Input */}
-                        <Box mt={2}>
-                          <TextField
-                            fullWidth
-                            size="small"
-                            placeholder="Add clinical coach notes or sign-off observations (optional)..."
-                            value={coachNotes}
-                            onChange={(e) => setCoachNotes(e.target.value)}
-                            sx={{ bgcolor: '#ffffff' }}
-                          />
-                        </Box>
-
-                        {result.human_review?.reviewedBy && (
-                          <Typography variant="caption" sx={{ display: 'block', mt: 1.5, color: '#1e293b', fontStyle: 'italic' }}>
-                            Audit Stamp: Reviewed by {result.human_review.reviewedBy} at {result.human_review.reviewedAt} ({result.human_review.status})
-                          </Typography>
-                        )}
-                      </Paper>
-
-                      {/* 9 STRUCTURED CLIENT INTELLIGENCE REPORT CARDS */}
+                      {/* 10 STRUCTURED CLIENT INTELLIGENCE REPORT CARDS */}
                       
                       {/* CARD 1: Weekly Summary */}
                       <Card sx={{ mb: 3, border: '1px solid #0f172a' }}>
@@ -1130,6 +1066,85 @@ function App() {
                             10. Supporting Evidence
                           </Typography>
                           {renderCardContent('supporting_evidence', 'Exact Transcript Quotes & Verifications', 'No transcript evidence quotes extracted.')}
+                        </CardContent>
+                      </Card>
+
+                      {/* HUMAN REVIEW PANEL AT THE BOTTOM */}
+                      <Card sx={{ mt: 4, mb: 3, border: '1px solid #0f172a', bgcolor: '#f8fafc' }}>
+                        <CardContent sx={{ p: 3 }}>
+                          <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'center' }} gap={2}>
+                            <Box display="flex" alignItems="center" gap={1.5} flexWrap="wrap">
+                              <Typography variant="h6" sx={{ fontSize: '1.05rem', fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <AuditIcon fontSize="small" /> Human Review Panel
+                              </Typography>
+                              
+                              {/* Status Display Badge */}
+                              <Box display="flex" alignItems="center" gap={1} sx={{ ml: { xs: 0, sm: 1 } }}>
+                                <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary' }}>
+                                  Review Status:
+                                </Typography>
+                                <Chip
+                                  label={result.human_review?.status || 'Pending'}
+                                  size="small"
+                                  color={
+                                    result.human_review?.status === 'Approved' ? 'success' :
+                                    result.human_review?.status === 'Rejected' ? 'error' : 'default'
+                                  }
+                                  sx={{ fontWeight: 700, px: 0.5 }}
+                                />
+                              </Box>
+                            </Box>
+
+                            {/* Control Buttons */}
+                            <Box display="flex" gap={1.5} alignItems="center" flexWrap="wrap">
+                              {isEditing ? (
+                                <>
+                                  <Button variant="contained" size="medium" color="primary" onClick={handleSaveEdit}>
+                                    Save Edits
+                                  </Button>
+                                  <Button variant="outlined" size="medium" onClick={handleCancelEdit}>
+                                    Cancel
+                                  </Button>
+                                </>
+                              ) : (
+                                <>
+                                  <Button
+                                    variant="outlined"
+                                    size="medium"
+                                    startIcon={<CheckIcon />}
+                                    onClick={handleApprove}
+                                    sx={{ color: '#16a34a', borderColor: '#16a34a', '&:hover': { bgcolor: '#f0fdf4' } }}
+                                  >
+                                    Approve
+                                  </Button>
+                                  <Button variant="outlined" size="medium" startIcon={<EditIcon />} onClick={handleStartEdit}>
+                                    Edit
+                                  </Button>
+                                  <Button variant="outlined" size="medium" color="error" startIcon={<RejectIcon />} onClick={handleReject}>
+                                    Reject
+                                  </Button>
+                                </>
+                              )}
+                            </Box>
+                          </Box>
+
+                          {/* Optional Coach Notes Textarea */}
+                          <Box mt={2.5}>
+                            <TextField
+                              fullWidth
+                              size="small"
+                              placeholder="Add coach review observations or sign-off notes (optional)..."
+                              value={coachNotes}
+                              onChange={(e) => setCoachNotes(e.target.value)}
+                              sx={{ bgcolor: '#ffffff' }}
+                            />
+                          </Box>
+
+                          {result.human_review?.reviewedBy && (
+                            <Typography variant="caption" sx={{ display: 'block', mt: 1.5, color: '#1e293b', fontStyle: 'italic' }}>
+                              Audit Stamp: Reviewed by {result.human_review.reviewedBy} at {result.human_review.reviewedAt} ({result.human_review.status})
+                            </Typography>
+                          )}
                         </CardContent>
                       </Card>
 
