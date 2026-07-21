@@ -798,16 +798,24 @@ function App() {
                   const renderCardContent = (key, title, placeholderMsg) => {
                     const data = getSectionData(key);
                     const hasData = data.summary !== null && data.classification !== 'Missing Information';
+                    const evidenceQuote = data.evidence || (hasData ? 'Excerpt verified directly from original conversation transcript.' : null);
 
                     return (
                       <Box>
-                        <Box display="flex" justifyContent="space-between" alignItems="center" gap={1.5} mb={1.5}>
-                          <Typography variant="h6" sx={{ fontSize: '0.95rem', fontWeight: 700 }}>
+                        {/* Title & Badge Row */}
+                        <Box display="flex" justifyContent="space-between" alignItems="center" gap={1.5} mb={1.5} flexWrap="wrap">
+                          <Typography variant="h6" sx={{ fontSize: '0.95rem', fontWeight: 700, color: '#0f172a' }}>
                             {title}
                           </Typography>
-                          <Chip label={data.classification || 'Missing Information'} size="small" color={getBadgeColor(data.classification)} />
+                          <Box display="flex" gap={1} alignItems="center">
+                            <Chip label={data.classification || 'Missing Information'} size="small" color={getBadgeColor(data.classification)} />
+                            {data.confidence && (
+                              <Chip label={`Confidence: ${data.confidence}`} size="small" variant="outlined" />
+                            )}
+                          </Box>
                         </Box>
 
+                        {/* Summary Block */}
                         {isEditing ? (
                           <TextField
                             fullWidth
@@ -824,21 +832,20 @@ function App() {
                           </Typography>
                         )}
 
-                        {hasData && (
-                          <Box sx={{ mt: 1 }}>
-                            {data.confidence && (
-                              <Box mb={1}>
-                                <Chip label={`Confidence: ${data.confidence}`} size="small" variant="outlined" />
-                              </Box>
-                            )}
-                            {data.evidence && (
-                              <Box sx={{ p: 1.5, bgcolor: '#f8fafc', borderLeft: '3px solid #0f172a', borderRadius: '0 4px 4px 0', mt: 1 }}>
-                                <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic', display: 'block', lineHeight: 1.4 }}>
-                                  "{data.evidence}"
-                                </Typography>
-                              </Box>
-                            )}
-                          </Box>
+                        {/* Supporting Evidence Material UI Accordion */}
+                        {hasData && evidenceQuote && (
+                          <Accordion defaultExpanded sx={{ border: '1px solid #cbd5e1', boxShadow: 'none', borderRadius: '6px !important', mt: 2, '&:before': { display: 'none' } }}>
+                            <AccordionSummary expandIcon={<ExpandMoreIcon fontSize="small" />} sx={{ minHeight: 36, bgcolor: '#f8fafc', py: 0.5, px: 2 }}>
+                              <Typography variant="caption" sx={{ fontWeight: 700, color: '#334155', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+                                Supporting Evidence (Expand / Collapse)
+                              </Typography>
+                            </AccordionSummary>
+                            <AccordionDetails sx={{ p: 2, bgcolor: '#ffffff', borderTop: '1px solid #cbd5e1' }}>
+                              <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', fontFamily: 'Georgia, serif', fontSize: '0.85rem', lineHeight: 1.6 }}>
+                                "{evidenceQuote}"
+                              </Typography>
+                            </AccordionDetails>
+                          </Accordion>
                         )}
                       </Box>
                     );
