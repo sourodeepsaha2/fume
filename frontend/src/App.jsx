@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import mammoth from 'mammoth';
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+import { jsPDF } from 'jspdf';
 import {
   ThemeProvider,
   createTheme,
@@ -63,7 +64,8 @@ import {
   VerifiedUser as AuditIcon,
   LocalHospital as ClinicalIcon,
   ViewSidebar as SplitViewIcon,
-  FormatListBulleted as ListIcon
+  FormatListBulleted as ListIcon,
+  PictureAsPdf as PdfIcon
 } from '@mui/icons-material';
 
 // Sample client sessions for 1-click clinical testing
@@ -509,17 +511,176 @@ function App() {
     triggerSnackbar('Clinical SOAP summary copied to clipboard for EHR integration!', 'success');
   };
 
-  const handleExportJson = () => {
-    if (!result) return;
-    const jsonStr = JSON.stringify(result, null, 2);
-    const blob = new Blob([jsonStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Clinical_Intelligence_${clientMetadata.clientId.replace('#', '')}_${clientMetadata.sessionDate}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    triggerSnackbar('Exported structured clinical JSON report.', 'info');
+  // Export Clinical Summary Report as structured text PDF
+  const handleExportPdf = () => {
+    if (!result) {
+      triggerSnackbar('No generated report to export.', 'warning');
+      return;
+    }
+
+    try {
+      const doc = new jsPDF({ unit: 'pt', format: 'letter' });
+      const pageWidth = doc.internal.pageSize.getWidth();
+      let y = 40;
+
+      // Header Banner
+      doc.setFillColor(15, 23, 42); // #0f172a
+      doc.rect(0, 0, pageWidth, 55, 'F');
+      
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(15);
+      doc.text('CLIENT INTELLIGENCE REPORT', 40, 34);
+
+      doc.setFontSize(8.5);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Generated via Gemini 2.5 AI | ${new Date().toLocaleDateString()}`, pageWidth - 40, 34, { align: 'right' });
+
+      y = 75;
+
+      // Client Metadata Box
+      doc.setTextColor(15, 23, 42);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.text(`Client Name: ${clientMetadata.clientName || 'N/A'}`, 40, y);
+      doc.text(`Client ID: ${clientMetadata.clientId || 'N/A'}`, 240, y);
+      doc.text(`Date: ${clientMetadata.sessionDate || 'N/A'}`, 420, y);
+      y += 16;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9.5);
+      doc.text(`Session Type: ${clientMetadata.sessionType || 'N/A'}`, 40, y);
+      doc.text(`Audit Status: ${result.human_review?.status || 'Pending'}`, 240, y);
+
+      y += 14;
+      doc.setDrawColor(203, 213, 225); // #cbd5e1
+      doc.line(40, y, pageWidth - 40, y);
+      y += 18;
+
+      // Dashboard KPI Summary
+      const dash = result.dashboard_summary || {};
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10.5);
+      doc.text('EXECUTIVE DASHBOARD SUMMARY', 40, y);
+      y += 14;
+
+      doc.setFontSize(8.5);
+      doc.setFont('helvetica', 'bold');
+      const progressVal = dash.overall_progress || 'On Track';
+      const riskVal = dash.overall_risk || 'Low Risk';
+      const engVal = dash.engagement || 'High Adherence';
+      const compVal = dash.data_completeness || '85%';
+
+      doc.text(`Progress: ${progressVal}`, 40, y);
+      doc.text(`Risk Level: ${riskVal}`, 170, y);
+      doc.text(`Engagement: ${engVal}`, 300, y);
+      doc.text(`Completeness: ${compVal}`, 440, y);
+
+      y += 18;
+      doc.line(40, y, pageWidth - 40, y);
+      y += 22;
+
+      // Section Data Exporter Array
+      const sections = [
+        { key: 'weekly_summary', title: '1. WEEKLY EXECUTIVE SUMMARY' },
+        { key: 'nutrition', title: '2. HEALTH METRIC: NUTRITION & DIET' },
+        { key: 'exercise', title: '2. HEALTH METRIC: EXERCISE & WORKOUTS' },
+        { key: 'steps', title: '2. HEALTH METRIC: STEPS ACTIVITY' },
+        { key: 'sleep', title: '2. HEALTH METRIC: SLEEP ANALYSIS' },
+        { key: 'water', title: '2. HEALTH METRIC: WATER INTAKE' },
+        { key: 'stress', title: '3. WELLNESS: STRESS LEVEL' },
+        { key: 'symptoms', title: '3. WELLNESS: SYMPTOMS & CONCERNS' },
+        { key: 'energy', title: '3. WELLNESS: ENERGY LEVELS' },
+        { key: 'progress_analysis', title: '4. PROGRESS ANALYSIS' },
+        { key: 'detected_patterns', title: '5. DETECTED BEHAVIORAL PATTERNS' },
+        { key: 'key_barriers', title: '6. KEY BARRIERS' },
+        { key: 'risk_flags', title: '7. RISK FLAGS & WARNINGS' },
+        { key: 'coach_recommendation', title: '8. COACH RECOMMENDATIONS' },
+        { key: 'pending_followups', title: '9. PENDING FOLLOW-UPS' },
+        { key: 'supporting_evidence', title: '10. SUPPORTING EVIDENCE QUOTES' },
+      ];
+
+      sections.forEach((sec) => {
+        const item = result[sec.key];
+        if (!item || !item.summary || item.classification === 'Missing Information') return;
+
+        // Page Break Check
+        if (y > 710) {
+          doc.addPage();
+          y = 45;
+        }
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9.5);
+        doc.setTextColor(15, 23, 42);
+        doc.text(sec.title, 40, y);
+
+        // Classification & Confidence Badge
+        doc.setFontSize(8);
+        doc.setTextColor(37, 99, 235); // #2563eb
+        doc.text(`[${item.classification || 'Fact'}]`, 280, y);
+        if (item.confidence) {
+          doc.setTextColor(71, 85, 105);
+          doc.text(`Confidence: ${item.confidence}`, 380, y);
+        }
+
+        y += 13;
+
+        // Summary Text
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8.5);
+        doc.setTextColor(51, 65, 85);
+        const splitText = doc.splitTextToSize(item.summary, pageWidth - 80);
+        doc.text(splitText, 40, y);
+        y += splitText.length * 11 + 5;
+
+        // Evidence Quote
+        if (item.evidence) {
+          doc.setFont('helvetica', 'italic');
+          doc.setFontSize(8);
+          doc.setTextColor(100, 116, 139);
+          const splitQuote = doc.splitTextToSize(`Evidence: "${item.evidence}"`, pageWidth - 90);
+          doc.text(splitQuote, 50, y);
+          y += splitQuote.length * 10 + 8;
+        } else {
+          y += 5;
+        }
+      });
+
+      // Human Review Notes Stamp
+      if (y > 670) {
+        doc.addPage();
+        y = 45;
+      }
+
+      y += 10;
+      doc.setDrawColor(15, 23, 42);
+      doc.line(40, y, pageWidth - 40, y);
+      y += 16;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9.5);
+      doc.setTextColor(15, 23, 42);
+      doc.text('HUMAN CLINICAL REVIEW SIGN-OFF STAMP', 40, y);
+      y += 14;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.text(`Review Status: ${result.human_review?.status || 'Pending'}`, 40, y);
+      if (result.human_review?.reviewedBy) {
+        doc.text(`Reviewed By: ${result.human_review.reviewedBy} at ${result.human_review.reviewedAt}`, 200, y);
+      }
+      if (coachNotes) {
+        y += 14;
+        const splitNotes = doc.splitTextToSize(`Coach Notes: ${coachNotes}`, pageWidth - 80);
+        doc.text(splitNotes, 40, y);
+      }
+
+      // Save PDF File
+      const safeName = (clientMetadata.clientName || 'Client').replace(/[^a-z0-9]/gi, '_');
+      doc.save(`${safeName}_Intelligence_Report.pdf`);
+      triggerSnackbar('Exported text-based clinical summary PDF report!', 'success');
+    } catch (err) {
+      console.error(err);
+      triggerSnackbar('Failed to generate PDF document.', 'error');
+    }
   };
 
   // Color mappings
@@ -963,8 +1124,8 @@ function App() {
                             <Button variant="outlined" size="small" startIcon={<CopyIcon />} onClick={handleCopyToEhr}>
                               Copy to EHR Notes
                             </Button>
-                            <Button variant="outlined" size="small" startIcon={<DownloadIcon />} onClick={handleExportJson}>
-                              Export JSON
+                            <Button variant="outlined" size="small" startIcon={<PdfIcon />} onClick={handleExportPdf}>
+                              Export PDF
                             </Button>
                           </Stack>
                         </Box>
